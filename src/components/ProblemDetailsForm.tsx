@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { GPSStatus } from './GPSStatus';
+import { MapPreview } from './MapPreview';
 import { VoiceRecorder } from './VoiceRecorder';
 import { ImageUploader } from './ImageUploader';
 import { useGeolocation } from '@/hooks/useGeolocation';
@@ -109,6 +110,17 @@ export const ProblemDetailsForm = ({ onSubmit, onBack }: ProblemDetailsFormProps
           accuracyThreshold={accuracyThreshold}
           onRetry={retry}
         />
+
+        {/* Map Preview */}
+        {!gpsError && (
+          <MapPreview
+            latitude={latitude}
+            longitude={longitude}
+            accuracy={accuracy}
+            isLoading={isGpsLoading}
+            isAccurate={isAccurate}
+          />
+        )}
 
         {/* Description */}
         <div className="space-y-2">
