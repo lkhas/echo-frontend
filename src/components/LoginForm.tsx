@@ -1,20 +1,19 @@
 import { useState } from 'react';
-import { User, Phone, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Phone, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Link } from 'react-router-dom';
 
-interface BasicDetailsFormProps {
-  onSubmit: (data: { name: string; phone: string; password: string }) => void;
+interface LoginFormProps {
+  onSubmit: (data: { phone: string; password: string }) => void;
 }
 
-export const BasicDetailsForm = ({ onSubmit }: BasicDetailsFormProps) => {
-  const [name, setName] = useState('');
+export const LoginForm = ({ onSubmit }: LoginFormProps) => {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState<{ name?: string; phone?: string; password?: string }>({});
+  const [errors, setErrors] = useState<{ phone?: string; password?: string }>({});
 
   const validatePhone = (value: string) => {
     const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s./0-9]*$/;
@@ -27,11 +26,7 @@ export const BasicDetailsForm = ({ onSubmit }: BasicDetailsFormProps) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const newErrors: { name?: string; phone?: string; password?: string } = {};
-
-    if (!name.trim()) {
-      newErrors.name = 'Name is required';
-    }
+    const newErrors: { phone?: string; password?: string } = {};
 
     if (!phone.trim()) {
       newErrors.phone = 'Phone number is required';
@@ -50,45 +45,21 @@ export const BasicDetailsForm = ({ onSubmit }: BasicDetailsFormProps) => {
       return;
     }
 
-    onSubmit({ name: name.trim(), phone: phone.trim(), password });
+    onSubmit({ phone: phone.trim(), password });
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 slide-up">
       <div className="text-center mb-8">
         <h1 className="text-2xl font-bold text-foreground mb-2">
-          Create Account
+          Welcome Back
         </h1>
         <p className="text-muted-foreground">
-          Please provide your details to register
+          Sign in to your account
         </p>
       </div>
 
       <div className="space-y-4">
-        {/* Name Field */}
-        <div className="space-y-2">
-          <Label htmlFor="name" className="text-sm font-medium">
-            Full Name
-          </Label>
-          <div className="relative">
-            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <Input
-              id="name"
-              type="text"
-              placeholder="Enter your full name"
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value);
-                if (errors.name) setErrors({ ...errors, name: undefined });
-              }}
-              className={`pl-11 h-12 ${errors.name ? 'border-destructive' : ''}`}
-            />
-          </div>
-          {errors.name && (
-            <p className="text-xs text-destructive">{errors.name}</p>
-          )}
-        </div>
-
         {/* Phone Field */}
         <div className="space-y-2">
           <Label htmlFor="phone" className="text-sm font-medium">
@@ -123,7 +94,7 @@ export const BasicDetailsForm = ({ onSubmit }: BasicDetailsFormProps) => {
             <Input
               id="password"
               type={showPassword ? 'text' : 'password'}
-              placeholder="Create a password"
+              placeholder="Enter your password"
               value={password}
               onChange={(e) => {
                 setPassword(e.target.value);
@@ -146,9 +117,6 @@ export const BasicDetailsForm = ({ onSubmit }: BasicDetailsFormProps) => {
           {errors.password && (
             <p className="text-xs text-destructive">{errors.password}</p>
           )}
-          <p className="text-xs text-muted-foreground">
-            Must be at least 6 characters
-          </p>
         </div>
       </div>
 
@@ -156,14 +124,14 @@ export const BasicDetailsForm = ({ onSubmit }: BasicDetailsFormProps) => {
         type="submit" 
         className="w-full h-12 text-base font-semibold shadow-lg shadow-primary/25"
       >
-        Continue
+        Login
         <ArrowRight className="w-5 h-5 ml-2" />
       </Button>
 
       <p className="text-center text-sm text-muted-foreground">
-        Already have an account?{' '}
-        <Link to="/login" className="text-primary font-medium hover:underline">
-          Login
+        Don't have an account?{' '}
+        <Link to="/" className="text-primary font-medium hover:underline">
+          Register
         </Link>
       </p>
     </form>
