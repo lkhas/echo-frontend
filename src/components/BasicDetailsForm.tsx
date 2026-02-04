@@ -1,26 +1,32 @@
 import { useState } from 'react';
-import { User, Phone, ArrowRight } from 'lucide-react';
+import { User, Phone, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 interface BasicDetailsFormProps {
-  onSubmit: (data: { name: string; phone: string }) => void;
+  onSubmit: (data: { name: string; phone: string; password: string }) => void;
 }
 
 export const BasicDetailsForm = ({ onSubmit }: BasicDetailsFormProps) => {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [errors, setErrors] = useState<{ name?: string; phone?: string }>({});
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState<{ name?: string; phone?: string; password?: string }>({});
 
   const validatePhone = (value: string) => {
     const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s./0-9]*$/;
     return value.length >= 10 && phoneRegex.test(value);
   };
 
+  const validatePassword = (value: string) => {
+    return value.length >= 6;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const newErrors: { name?: string; phone?: string } = {};
+    const newErrors: { name?: string; phone?: string; password?: string } = {};
 
     if (!name.trim()) {
       newErrors.name = 'Name is required';
@@ -32,26 +38,33 @@ export const BasicDetailsForm = ({ onSubmit }: BasicDetailsFormProps) => {
       newErrors.phone = 'Please enter a valid phone number';
     }
 
+    if (!password.trim()) {
+      newErrors.password = 'Password is required';
+    } else if (!validatePassword(password)) {
+      newErrors.password = 'Password must be at least 6 characters';
+    }
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
 
-    onSubmit({ name: name.trim(), phone: phone.trim() });
+    onSubmit({ name: name.trim(), phone: phone.trim(), password });
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 slide-up">
       <div className="text-center mb-8">
         <h1 className="text-2xl font-bold text-foreground mb-2">
-          Report a Problem
+          Create Account
         </h1>
         <p className="text-muted-foreground">
-          Please provide your contact details
+          Please provide your details to register
         </p>
       </div>
 
       <div className="space-y-4">
+        {/* Name Field */}
         <div className="space-y-2">
           <Label htmlFor="name" className="text-sm font-medium">
             Full Name
@@ -75,6 +88,7 @@ export const BasicDetailsForm = ({ onSubmit }: BasicDetailsFormProps) => {
           )}
         </div>
 
+        {/* Phone Field */}
         <div className="space-y-2">
           <Label htmlFor="phone" className="text-sm font-medium">
             Phone Number
@@ -96,6 +110,44 @@ export const BasicDetailsForm = ({ onSubmit }: BasicDetailsFormProps) => {
           {errors.phone && (
             <p className="text-xs text-destructive">{errors.phone}</p>
           )}
+        </div>
+
+        {/* Password Field */}
+        <div className="space-y-2">
+          <Label htmlFor="password" className="text-sm font-medium">
+            Password
+          </Label>
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <Input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Create a password"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (errors.password) setErrors({ ...errors, password: undefined });
+              }}
+              className={`pl-11 pr-11 h-12 ${errors.password ? 'border-destructive' : ''}`}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {showPassword ? (
+                <EyeOff className="w-5 h-5" />
+              ) : (
+                <Eye className="w-5 h-5" />
+              )}
+            </button>
+          </div>
+          {errors.password && (
+            <p className="text-xs text-destructive">{errors.password}</p>
+          )}
+          <p className="text-xs text-muted-foreground">
+            Must be at least 6 characters
+          </p>
         </div>
       </div>
 

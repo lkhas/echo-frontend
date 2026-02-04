@@ -7,6 +7,7 @@ import { SuccessScreen } from '@/components/SuccessScreen';
 interface UserDetails {
   name: string;
   phone: string;
+  password: string;
 }
 
 interface ProblemDetails {
