@@ -1,0 +1,88 @@
+ {
+   "common": {
+     "continue": "Continue",
+     "login": "Login",
+     "register": "Register",
+     "submit": "Submit",
+     "back": "Back",
+     "retry": "Retry"
+   },
+   "auth": {
+     "createAccount": "Create Account",
+     "provideDetails": "Please provide your details to register",
+     "welcomeBack": "Welcome Back",
+     "signInToAccount": "Sign in to your account",
+     "fullName": "Full Name",
+     "phoneNumber": "Phone Number",
+     "password": "Password",
+     "enterName": "Enter your full name",
+     "enterPhone": "Enter your phone number",
+     "enterPassword": "Enter your password",
+     "createPassword": "Create a password",
+     "passwordHint": "Must be at least 6 characters",
+     "alreadyHaveAccount": "Already have an account?",
+     "dontHaveAccount": "Don't have an account?"
+   },
+   "validation": {
+     "nameRequired": "Name is required",
+     "phoneRequired": "Phone number is required",
+     "phoneInvalid": "Please enter a valid phone number",
+     "passwordRequired": "Password is required",
+     "passwordLength": "Password must be at least 6 characters"
+   },
+   "problem": {
+     "describeTheProblem": "Describe the Problem",
+     "provideDetails": "Provide details using text, voice, or images",
+     "problemDescription": "Problem Description",
+     "optional": "optional",
+     "describePlaceholder": "Describe the issue you're reporting...",
+     "submitReport": "Submit Report"
+   },
+   "gps": {
+     "fetchingLocation": "Fetching accurate location…",
+     "waitForGps": "Please wait while we acquire your GPS signal",
+     "locationAcquired": "Location Acquired",
+     "improvingAccuracy": "Improving GPS accuracy…",
+     "enableLocation": "Please enable location services and try again",
+     "waitingForGps": "Waiting for accurate GPS location before submission...",
+     "latitude": "Latitude",
+     "longitude": "Longitude",
+     "accuracy": "Accuracy",
+     "needLessThan": "need <{{threshold}}m"
+   },
+   "voice": {
+     "voiceRecording": "Voice Recording",
+     "tapToRecord": "Tap to start recording",
+     "recording": "Recording...",
+     "recordingSaved": "Recording saved"
+   },
+   "images": {
+     "images": "Images",
+     "camera": "Camera",
+     "upload": "Upload",
+     "add": "Add",
+     "uploadAlt": "Upload {{number}}"
+   },
+   "map": {
+     "locationPreview": "Location Preview",
+     "waitingForLocation": "Waiting for location...",
+     "noLocation": "No location available",
+     "accurate": "Accurate",
+     "lowAccuracy": "Low accuracy",
+     "yourLocation": "Your location",
+     "gpsImproving": "GPS still improving..."
+   },
+   "success": {
+     "reportSubmitted": "Report Submitted!",
+     "thankYou": "Thank you for your report. Our team will review it and take the necessary action.",
+     "submitAnother": "Submit Another Report"
+   },
+   "footer": {
+     "dataSecure": "Your data is secure and will only be used to process your report",
+     "authDataSecure": "Your data is secure and will only be used to authenticate you"
+   },
+   "toast": {
+     "loginSuccess": "Login successful!",
+     "welcomeBack": "Welcome back to your account."
+   }
+ }

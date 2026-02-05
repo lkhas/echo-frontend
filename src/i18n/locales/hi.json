@@ -1,0 +1,88 @@
+ {
+   "common": {
+     "continue": "जारी रखें",
+     "login": "लॉग इन",
+     "register": "रजिस्टर",
+     "submit": "जमा करें",
+     "back": "वापस",
+     "retry": "पुनः प्रयास करें"
+   },
+   "auth": {
+     "createAccount": "खाता बनाएं",
+     "provideDetails": "कृपया रजिस्टर करने के लिए अपना विवरण दें",
+     "welcomeBack": "वापसी पर स्वागत है",
+     "signInToAccount": "अपने खाते में साइन इन करें",
+     "fullName": "पूरा नाम",
+     "phoneNumber": "फ़ोन नंबर",
+     "password": "पासवर्ड",
+     "enterName": "अपना पूरा नाम दर्ज करें",
+     "enterPhone": "अपना फ़ोन नंबर दर्ज करें",
+     "enterPassword": "अपना पासवर्ड दर्ज करें",
+     "createPassword": "पासवर्ड बनाएं",
+     "passwordHint": "कम से कम 6 अक्षर होने चाहिए",
+     "alreadyHaveAccount": "पहले से खाता है?",
+     "dontHaveAccount": "खाता नहीं है?"
+   },
+   "validation": {
+     "nameRequired": "नाम आवश्यक है",
+     "phoneRequired": "फ़ोन नंबर आवश्यक है",
+     "phoneInvalid": "कृपया वैध फ़ोन नंबर दर्ज करें",
+     "passwordRequired": "पासवर्ड आवश्यक है",
+     "passwordLength": "पासवर्ड कम से कम 6 अक्षरों का होना चाहिए"
+   },
+   "problem": {
+     "describeTheProblem": "समस्या का वर्णन करें",
+     "provideDetails": "टेक्स्ट, आवाज या छवियों का उपयोग करके विवरण दें",
+     "problemDescription": "समस्या विवरण",
+     "optional": "वैकल्पिक",
+     "describePlaceholder": "जिस समस्या की आप रिपोर्ट कर रहे हैं उसका वर्णन करें...",
+     "submitReport": "रिपोर्ट जमा करें"
+   },
+   "gps": {
+     "fetchingLocation": "सटीक स्थान प्राप्त हो रहा है…",
+     "waitForGps": "कृपया प्रतीक्षा करें जब तक हम आपका GPS सिग्नल प्राप्त करते हैं",
+     "locationAcquired": "स्थान प्राप्त",
+     "improvingAccuracy": "GPS सटीकता में सुधार हो रहा है…",
+     "enableLocation": "कृपया स्थान सेवाएं सक्षम करें और पुनः प्रयास करें",
+     "waitingForGps": "जमा करने से पहले सटीक GPS स्थान की प्रतीक्षा है...",
+     "latitude": "अक्षांश",
+     "longitude": "देशांतर",
+     "accuracy": "सटीकता",
+     "needLessThan": "<{{threshold}}m की आवश्यकता"
+   },
+   "voice": {
+     "voiceRecording": "आवाज रिकॉर्डिंग",
+     "tapToRecord": "रिकॉर्डिंग शुरू करने के लिए टैप करें",
+     "recording": "रिकॉर्डिंग...",
+     "recordingSaved": "रिकॉर्डिंग सहेजी गई"
+   },
+   "images": {
+     "images": "छवियां",
+     "camera": "कैमरा",
+     "upload": "अपलोड",
+     "add": "जोड़ें",
+     "uploadAlt": "अपलोड {{number}}"
+   },
+   "map": {
+     "locationPreview": "स्थान पूर्वावलोकन",
+     "waitingForLocation": "स्थान की प्रतीक्षा है...",
+     "noLocation": "कोई स्थान उपलब्ध नहीं",
+     "accurate": "सटीक",
+     "lowAccuracy": "कम सटीकता",
+     "yourLocation": "आपका स्थान",
+     "gpsImproving": "GPS अभी भी सुधार कर रहा है..."
+   },
+   "success": {
+     "reportSubmitted": "रिपोर्ट जमा हो गई!",
+     "thankYou": "आपकी रिपोर्ट के लिए धन्यवाद। हमारी टीम इसकी समीक्षा करेगी और आवश्यक कार्रवाई करेगी।",
+     "submitAnother": "एक और रिपोर्ट जमा करें"
+   },
+   "footer": {
+     "dataSecure": "आपका डेटा सुरक्षित है और केवल आपकी रिपोर्ट को संसाधित करने के लिए उपयोग किया जाएगा",
+     "authDataSecure": "आपका डेटा सुरक्षित है और केवल आपको प्रमाणित करने के लिए उपयोग किया जाएगा"
+   },
+   "toast": {
+     "loginSuccess": "लॉगिन सफल!",
+     "welcomeBack": "आपके खाते में वापसी पर स्वागत है।"
+   }
+ }

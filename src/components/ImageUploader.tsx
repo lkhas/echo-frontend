@@ -1,6 +1,7 @@
 import { Camera, Upload, X, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRef } from 'react';
+ import { useTranslation } from 'react-i18next';
 
 interface ImageUploaderProps {
   images: File[];
@@ -8,6 +9,7 @@ interface ImageUploaderProps {
 }
 
 export const ImageUploader = ({ images, onImagesChange }: ImageUploaderProps) => {
+   const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -28,7 +30,7 @@ export const ImageUploader = ({ images, onImagesChange }: ImageUploaderProps) =>
 
   return (
     <div className="space-y-3">
-      <label className="text-sm font-medium text-foreground">Images</label>
+       <label className="text-sm font-medium text-foreground">{t('images.images')}</label>
       
       <input
         ref={fileInputRef}
@@ -57,7 +59,7 @@ export const ImageUploader = ({ images, onImagesChange }: ImageUploaderProps) =>
             onClick={() => cameraInputRef.current?.click()}
           >
             <Camera className="w-6 h-6" />
-            <span className="text-xs">Camera</span>
+             <span className="text-xs">{t('images.camera')}</span>
           </Button>
           <Button
             type="button"
@@ -66,7 +68,7 @@ export const ImageUploader = ({ images, onImagesChange }: ImageUploaderProps) =>
             onClick={() => fileInputRef.current?.click()}
           >
             <Upload className="w-6 h-6" />
-            <span className="text-xs">Upload</span>
+             <span className="text-xs">{t('images.upload')}</span>
           </Button>
         </div>
       ) : (
@@ -76,7 +78,7 @@ export const ImageUploader = ({ images, onImagesChange }: ImageUploaderProps) =>
               <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-border">
                 <img
                   src={URL.createObjectURL(image)}
-                  alt={`Upload ${index + 1}`}
+                   alt={t('images.uploadAlt', { number: index + 1 })}
                   className="w-full h-full object-cover"
                 />
                 <button
@@ -95,7 +97,7 @@ export const ImageUploader = ({ images, onImagesChange }: ImageUploaderProps) =>
                 className="aspect-square rounded-lg border-2 border-dashed border-border flex flex-col items-center justify-center gap-1 text-muted-foreground hover:border-primary hover:text-primary transition-colors"
               >
                 <ImageIcon className="w-5 h-5" />
-                <span className="text-xs">Add</span>
+                 <span className="text-xs">{t('images.add')}</span>
               </button>
             )}
           </div>

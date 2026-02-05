@@ -1,11 +1,14 @@
 import { CheckCircle2, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+ import { useTranslation } from 'react-i18next';
 
 interface SuccessScreenProps {
   onReset: () => void;
 }
 
 export const SuccessScreen = ({ onReset }: SuccessScreenProps) => {
+   const { t } = useTranslation();
+ 
   return (
     <div className="flex flex-col items-center justify-center text-center py-12 slide-up">
       <div className="w-20 h-20 bg-success/20 rounded-full flex items-center justify-center mb-6">
@@ -13,11 +16,11 @@ export const SuccessScreen = ({ onReset }: SuccessScreenProps) => {
       </div>
       
       <h1 className="text-2xl font-bold text-foreground mb-2">
-        Report Submitted!
+         {t('success.reportSubmitted')}
       </h1>
       
       <p className="text-muted-foreground mb-8 max-w-sm">
-        Thank you for your report. Our team will review it and take the necessary action.
+         {t('success.thankYou')}
       </p>
 
       <Button
@@ -27,7 +30,7 @@ export const SuccessScreen = ({ onReset }: SuccessScreenProps) => {
         className="gap-2"
       >
         <RotateCcw className="w-4 h-4" />
-        Submit Another Report
+         {t('success.submitAnother')}
       </Button>
     </div>
   );
