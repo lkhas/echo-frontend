@@ -1,6 +1,5 @@
 import { MapPin, Loader2, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
- import { useTranslation } from 'react-i18next';
 
 interface GPSStatusProps {
   latitude: number | null;
@@ -23,8 +22,6 @@ export const GPSStatus = ({
   accuracyThreshold,
   onRetry,
 }: GPSStatusProps) => {
-   const { t } = useTranslation();
- 
   if (error) {
     return (
       <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 fade-in">
@@ -33,7 +30,7 @@ export const GPSStatus = ({
           <div className="flex-1">
             <p className="text-sm font-medium text-destructive">{error}</p>
             <p className="text-xs text-muted-foreground mt-1">
-               {t('gps.enableLocation')}
+              Please enable location services and try again
             </p>
           </div>
           <Button
@@ -43,7 +40,7 @@ export const GPSStatus = ({
             className="shrink-0"
           >
             <RefreshCw className="w-4 h-4 mr-2" />
-             {t('common.retry')}
+            Retry
           </Button>
         </div>
       </div>
@@ -61,11 +58,11 @@ export const GPSStatus = ({
             <div className="flex items-center gap-2">
               <Loader2 className="w-4 h-4 animate-spin text-primary" />
               <p className="text-sm font-medium text-foreground">
-                 {t('gps.fetchingLocation')}
+                Fetching accurate location…
               </p>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-               {t('gps.waitForGps')}
+              Please wait while we acquire your GPS signal
             </p>
           </div>
         </div>
@@ -94,21 +91,21 @@ export const GPSStatus = ({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-sm font-medium text-foreground">
-               {isAccurate ? t('gps.locationAcquired') : t('gps.improvingAccuracy')}
+              {isAccurate ? 'Location Acquired' : 'Improving GPS accuracy…'}
             </span>
             {!isAccurate && (
               <Loader2 className="w-3 h-3 animate-spin text-warning" />
             )}
           </div>
           <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-             <div className="text-muted-foreground">{t('gps.latitude')}:</div>
+            <div className="text-muted-foreground">Latitude:</div>
             <div className="font-mono text-foreground">{latitude?.toFixed(6)}</div>
-             <div className="text-muted-foreground">{t('gps.longitude')}:</div>
+            <div className="text-muted-foreground">Longitude:</div>
             <div className="font-mono text-foreground">{longitude?.toFixed(6)}</div>
-             <div className="text-muted-foreground">{t('gps.accuracy')}:</div>
+            <div className="text-muted-foreground">Accuracy:</div>
             <div className={`font-mono ${isAccurate ? 'text-success' : 'text-warning'}`}>
               {accuracy?.toFixed(0)}m 
-               {isAccurate ? ' ✓' : ` (${t('gps.needLessThan', { threshold: accuracyThreshold })})`}
+              {isAccurate ? ' ✓' : ` (need <${accuracyThreshold}m)`}
             </div>
           </div>
         </div>

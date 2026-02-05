@@ -1,7 +1,6 @@
 import { Mic, Square, Play, Pause, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useRef } from 'react';
- import { useTranslation } from 'react-i18next';
 
 interface VoiceRecorderProps {
   isRecording: boolean;
@@ -22,7 +21,6 @@ export const VoiceRecorder = ({
   onStopRecording,
   onClearRecording,
 }: VoiceRecorderProps) => {
-   const { t } = useTranslation();
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -49,7 +47,7 @@ export const VoiceRecorder = ({
 
   return (
     <div className="space-y-3">
-       <label className="text-sm font-medium text-foreground">{t('voice.voiceRecording')}</label>
+      <label className="text-sm font-medium text-foreground">Voice Recording</label>
       
       {error && (
         <p className="text-xs text-destructive">{error}</p>
@@ -73,11 +71,11 @@ export const VoiceRecorder = ({
           <div className="text-center">
             {isRecording ? (
               <>
-                 <p className="text-sm font-medium text-destructive">{t('voice.recording')}</p>
+                <p className="text-sm font-medium text-destructive">Recording...</p>
                 <p className="text-2xl font-mono text-foreground mt-1">{formatTime(duration)}</p>
               </>
             ) : (
-               <p className="text-sm text-muted-foreground">{t('voice.tapToRecord')}</p>
+              <p className="text-sm text-muted-foreground">Tap to start recording</p>
             )}
           </div>
         </div>
@@ -102,7 +100,7 @@ export const VoiceRecorder = ({
             )}
           </Button>
           <div className="flex-1">
-             <p className="text-sm font-medium text-foreground">{t('voice.recordingSaved')}</p>
+            <p className="text-sm font-medium text-foreground">Recording saved</p>
             <p className="text-xs text-muted-foreground">{formatTime(duration)}</p>
           </div>
           <Button
