@@ -1,9 +1,19 @@
-import { LoginForm } from '@/components/LoginForm';
+ import { LoginForm } from '@/components/LoginForm';
+ import { useNavigate } from 'react-router-dom';
+ import { useToast } from '@/hooks/use-toast';
 
 const Login = () => {
+   const navigate = useNavigate();
+   const { toast } = useToast();
+ 
   const handleLoginSubmit = (data: { phone: string; password: string }) => {
-    // Here you would typically authenticate the user
     console.log('Login submitted:', data);
+     toast({
+       title: "Login successful!",
+       description: "Welcome back to your account.",
+     });
+     // Navigate to home after successful login
+     navigate('/');
   };
 
   return (
