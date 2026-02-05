@@ -9,6 +9,7 @@ import { VoiceRecorder } from './VoiceRecorder';
 import { ImageUploader } from './ImageUploader';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { useVoiceRecording } from '@/hooks/useVoiceRecording';
+ import { useTranslation } from 'react-i18next';
 
 interface ProblemDetailsFormProps {
   onSubmit: (data: {
@@ -25,6 +26,7 @@ interface ProblemDetailsFormProps {
 }
 
 export const ProblemDetailsForm = ({ onSubmit, onBack }: ProblemDetailsFormProps) => {
+   const { t } = useTranslation();
   const [description, setDescription] = useState('');
   const [images, setImages] = useState<File[]>([]);
   
@@ -90,10 +92,10 @@ export const ProblemDetailsForm = ({ onSubmit, onBack }: ProblemDetailsFormProps
         </Button>
         <div>
           <h1 className="text-xl font-bold text-foreground">
-            Describe the Problem
+             {t('problem.describeTheProblem')}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Provide details using text, voice, or images
+             {t('problem.provideDetails')}
           </p>
         </div>
       </div>
@@ -125,11 +127,11 @@ export const ProblemDetailsForm = ({ onSubmit, onBack }: ProblemDetailsFormProps
         {/* Description */}
         <div className="space-y-2">
           <Label htmlFor="description" className="text-sm font-medium">
-            Problem Description <span className="text-muted-foreground font-normal">(optional)</span>
+             {t('problem.problemDescription')} <span className="text-muted-foreground font-normal">({t('problem.optional')})</span>
           </Label>
           <Textarea
             id="description"
-            placeholder="Describe the issue you're reporting..."
+             placeholder={t('problem.describePlaceholder')}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={4}
@@ -161,12 +163,12 @@ export const ProblemDetailsForm = ({ onSubmit, onBack }: ProblemDetailsFormProps
         disabled={!canSubmit}
       >
         <Send className="w-5 h-5 mr-2" />
-        Submit Report
+         {t('problem.submitReport')}
       </Button>
 
       {!canSubmit && !gpsError && (
         <p className="text-xs text-center text-muted-foreground">
-          Waiting for accurate GPS location before submission...
+           {t('gps.waitingForGps')}
         </p>
       )}
     </form>

@@ -4,12 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Link } from 'react-router-dom';
+ import { useTranslation } from 'react-i18next';
 
 interface LoginFormProps {
   onSubmit: (data: { phone: string; password: string }) => void;
 }
 
 export const LoginForm = ({ onSubmit }: LoginFormProps) => {
+   const { t } = useTranslation();
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -29,15 +31,15 @@ export const LoginForm = ({ onSubmit }: LoginFormProps) => {
     const newErrors: { phone?: string; password?: string } = {};
 
     if (!phone.trim()) {
-      newErrors.phone = 'Phone number is required';
+       newErrors.phone = t('validation.phoneRequired');
     } else if (!validatePhone(phone)) {
-      newErrors.phone = 'Please enter a valid phone number';
+       newErrors.phone = t('validation.phoneInvalid');
     }
 
     if (!password.trim()) {
-      newErrors.password = 'Password is required';
+       newErrors.password = t('validation.passwordRequired');
     } else if (!validatePassword(password)) {
-      newErrors.password = 'Password must be at least 6 characters';
+       newErrors.password = t('validation.passwordLength');
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -52,10 +54,10 @@ export const LoginForm = ({ onSubmit }: LoginFormProps) => {
     <form onSubmit={handleSubmit} className="space-y-6 slide-up">
       <div className="text-center mb-8">
         <h1 className="text-2xl font-bold text-foreground mb-2">
-          Welcome Back
+           {t('auth.welcomeBack')}
         </h1>
         <p className="text-muted-foreground">
-          Sign in to your account
+           {t('auth.signInToAccount')}
         </p>
       </div>
 
@@ -63,14 +65,14 @@ export const LoginForm = ({ onSubmit }: LoginFormProps) => {
         {/* Phone Field */}
         <div className="space-y-2">
           <Label htmlFor="phone" className="text-sm font-medium">
-            Phone Number
+             {t('auth.phoneNumber')}
           </Label>
           <div className="relative">
             <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
               id="phone"
               type="tel"
-              placeholder="Enter your phone number"
+               placeholder={t('auth.enterPhone')}
               value={phone}
               onChange={(e) => {
                 setPhone(e.target.value);
@@ -87,14 +89,14 @@ export const LoginForm = ({ onSubmit }: LoginFormProps) => {
         {/* Password Field */}
         <div className="space-y-2">
           <Label htmlFor="password" className="text-sm font-medium">
-            Password
+             {t('auth.password')}
           </Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
               id="password"
               type={showPassword ? 'text' : 'password'}
-              placeholder="Enter your password"
+               placeholder={t('auth.enterPassword')}
               value={password}
               onChange={(e) => {
                 setPassword(e.target.value);
@@ -124,14 +126,14 @@ export const LoginForm = ({ onSubmit }: LoginFormProps) => {
         type="submit" 
         className="w-full h-12 text-base font-semibold shadow-lg shadow-primary/25"
       >
-        Login
+         {t('common.login')}
         <ArrowRight className="w-5 h-5 ml-2" />
       </Button>
 
       <p className="text-center text-sm text-muted-foreground">
-        Don't have an account?{' '}
+         {t('auth.dontHaveAccount')}{' '}
         <Link to="/" className="text-primary font-medium hover:underline">
-          Register
+           {t('common.register')}
         </Link>
       </p>
     </form>
