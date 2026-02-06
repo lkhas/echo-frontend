@@ -13,8 +13,10 @@ export const BasicDetailsForm = ({ onSubmit }: BasicDetailsFormProps) => {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState<{ name?: string; phone?: string; password?: string }>({});
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [errors, setErrors] = useState<{ name?: string; phone?: string; password?: string; confirmPassword?: string }>({});
 
   const validatePhone = (value: string) => {
     const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s./0-9]*$/;
@@ -27,7 +29,7 @@ export const BasicDetailsForm = ({ onSubmit }: BasicDetailsFormProps) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const newErrors: { name?: string; phone?: string; password?: string } = {};
+    const newErrors: { name?: string; phone?: string; password?: string; confirmPassword?: string } = {};
 
     if (!name.trim()) {
       newErrors.name = 'Name is required';
@@ -43,6 +45,12 @@ export const BasicDetailsForm = ({ onSubmit }: BasicDetailsFormProps) => {
       newErrors.password = 'Password is required';
     } else if (!validatePassword(password)) {
       newErrors.password = 'Password must be at least 6 characters';
+    }
+
+    if (!confirmPassword.trim()) {
+      newErrors.confirmPassword = 'Please confirm your password';
+    } else if (confirmPassword !== password) {
+      newErrors.confirmPassword = 'Passwords do not match';
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -149,6 +157,41 @@ export const BasicDetailsForm = ({ onSubmit }: BasicDetailsFormProps) => {
           <p className="text-xs text-muted-foreground">
             Must be at least 6 characters
           </p>
+        </div>
+
+        {/* Confirm Password Field */}
+        <div className="space-y-2">
+          <Label htmlFor="confirmPassword" className="text-sm font-medium">
+            Confirm Password
+          </Label>
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <Input
+              id="confirmPassword"
+              type={showConfirmPassword ? 'text' : 'password'}
+              placeholder="Confirm your password"
+              value={confirmPassword}
+              onChange={(e) => {
+                setConfirmPassword(e.target.value);
+                if (errors.confirmPassword) setErrors({ ...errors, confirmPassword: undefined });
+              }}
+              className={`pl-11 pr-11 h-12 ${errors.confirmPassword ? 'border-destructive' : ''}`}
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {showConfirmPassword ? (
+                <EyeOff className="w-5 h-5" />
+              ) : (
+                <Eye className="w-5 h-5" />
+              )}
+            </button>
+          </div>
+          {errors.confirmPassword && (
+            <p className="text-xs text-destructive">{errors.confirmPassword}</p>
+          )}
         </div>
       </div>
 
