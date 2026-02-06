@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { BasicDetailsForm } from '@/components/BasicDetailsForm';
+import { UserPlus } from 'lucide-react';
 
 interface UserDetails {
   name: string;
@@ -18,37 +19,49 @@ const Index = () => {
       title: "Account Created Successfully!",
       description: `Name: ${data.name} | Phone: ${data.phone}`,
     });
-    // Redirect to login page after short delay
     setTimeout(() => {
       navigate('/login');
     }, 1500);
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-md mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex items-center justify-center mb-6">
-          <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-            <svg
-              className="w-6 h-6 text-primary-foreground"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-              />
-            </svg>
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/30 flex flex-col">
+      <div className="max-w-md mx-auto px-4 py-8 flex-1 flex flex-col justify-center w-full">
+        {/* Hero Header */}
+        <div className="text-center mb-8 slide-up">
+          <div className="relative inline-flex items-center justify-center mb-4">
+            <div className="absolute w-20 h-20 bg-primary/10 rounded-full animate-pulse" />
+            <div className="relative w-16 h-16 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-lg shadow-primary/30 -rotate-3 hover:rotate-0 transition-transform duration-300">
+              <UserPlus className="w-8 h-8 text-primary-foreground" />
+            </div>
           </div>
+          <h2 className="text-sm font-semibold text-primary tracking-wider uppercase mb-1">
+            Problem Reporter
+          </h2>
+          <p className="text-xs text-muted-foreground">
+            Join and report issues in your community
+          </p>
         </div>
 
         {/* Form Container */}
-        <div className="glass-card rounded-2xl p-6">
+        <div className="glass-card rounded-2xl p-6 shadow-xl shadow-primary/5 border border-border/60">
           <BasicDetailsForm onSubmit={handleBasicDetailsSubmit} />
+        </div>
+
+        {/* Trust Badges */}
+        <div className="flex items-center justify-center gap-6 mt-8 fade-in">
+          <div className="flex items-center gap-1.5 text-muted-foreground">
+            <div className="w-2 h-2 rounded-full bg-success" />
+            <span className="text-xs">Secure</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-muted-foreground">
+            <div className="w-2 h-2 rounded-full bg-primary" />
+            <span className="text-xs">Encrypted</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-muted-foreground">
+            <div className="w-2 h-2 rounded-full bg-warning" />
+            <span className="text-xs">Private</span>
+          </div>
         </div>
 
         {/* Footer */}
