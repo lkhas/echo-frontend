@@ -199,7 +199,7 @@ export const BasicDetailsForm = ({ onSubmit }: BasicDetailsFormProps) => {
         type="submit" 
         className="w-full h-12 text-base font-semibold shadow-lg shadow-primary/25"
       >
-        Continue
+        Register
         <ArrowRight className="w-5 h-5 ml-2" />
       </Button>
 
