@@ -13,7 +13,7 @@ const Login = () => {
        description: "Welcome back to your account.",
      });
      // Navigate to home after successful login
-     navigate('/');
+     navigate('/observation');
   };
 
   return (

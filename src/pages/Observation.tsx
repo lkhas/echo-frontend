@@ -1,27 +1,29 @@
-import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/hooks/use-toast';
-import { BasicDetailsForm } from '@/components/BasicDetailsForm';
+import { useState } from 'react';
+import { ProgressIndicator } from '@/components/ProgressIndicator';
+import { ProblemDetailsForm } from '@/components/ProblemDetailsForm';
+import { SuccessScreen } from '@/components/SuccessScreen';
 
-interface UserDetails {
-  name: string;
-  phone: string;
-  password: string;
+interface ProblemDetails {
+  description: string;
+  audioBlob: Blob | null;
+  images: File[];
+  location: {
+    latitude: number;
+    longitude: number;
+    accuracy: number;
+  };
 }
 
-const Index = () => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
+const Observation = () => {
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const handleBasicDetailsSubmit = (data: UserDetails) => {
-    console.log('Registration submitted:', data);
-    toast({
-      title: "Account Created Successfully!",
-      description: `Name: ${data.name} | Phone: ${data.phone}`,
-    });
-    // Redirect to login page after short delay
-    setTimeout(() => {
-      navigate('/login');
-    }, 1500);
+  const handleProblemDetailsSubmit = (data: ProblemDetails) => {
+    console.log('Observation submitted:', data);
+    setIsSubmitted(true);
+  };
+
+  const handleReset = () => {
+    setIsSubmitted(false);
   };
 
   return (
@@ -48,7 +50,14 @@ const Index = () => {
 
         {/* Form Container */}
         <div className="glass-card rounded-2xl p-6">
-          <BasicDetailsForm onSubmit={handleBasicDetailsSubmit} />
+          {isSubmitted ? (
+            <SuccessScreen onReset={handleReset} />
+          ) : (
+            <ProblemDetailsForm
+              onSubmit={handleProblemDetailsSubmit}
+              onBack={() => {}}
+            />
+          )}
         </div>
 
         {/* Footer */}
@@ -60,4 +69,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default Observation;
