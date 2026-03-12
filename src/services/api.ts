@@ -1,4 +1,4 @@
-const API_BASE = "/api";
+const API_BASE = "https://echo-backend-253877504834.europe-west1.run.app/api";
 
 export async function apiFetch<T>(
   url: string,
