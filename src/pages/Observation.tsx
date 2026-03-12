@@ -1,11 +1,20 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { ProblemDetailsForm } from '@/components/ProblemDetailsForm';
 import { SuccessScreen } from '@/components/SuccessScreen';
+import { TopNav } from '@/components/TopNav';
+import { Zap } from 'lucide-react';
+
+import { v4 as uuid } from 'uuid';
+import { saveObservationOffline } from '@/offline/saveObservation';
+import { syncOperations } from '@/offline/sync';
+import { syncMediaUploads } from '@/offline/syncMedia';
+import { syncAI } from '@/offline/syncAI';
+
 
 interface ProblemDetails {
+  title: string;
+  villageName: string;
   description: string;
   audioBlob: Blob | null;
   images: File[];
@@ -20,8 +29,29 @@ const Observation = () => {
   const navigate = useNavigate();
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const handleProblemDetailsSubmit = (data: ProblemDetails) => {
-    console.log('Observation submitted:', data);
+  const handleProblemDetailsSubmit = async (data: ProblemDetails) => {
+    const observation = {
+  id: uuid(),
+  title: data.title,
+  narrative: data.description,
+  latitude: data.location.latitude,
+  longitude: data.location.longitude,
+  observation_type: null,   // AI will classify later
+  village_name: data.villageName,
+  image_urls: [],
+  audio_url: null,
+  updated_at: Date.now()
+};
+
+    await saveObservationOffline(observation, data.images, data.audioBlob);
+
+    const token = localStorage.getItem('access_token');
+    if (navigator.onLine && token) {
+  await syncOperations(token);
+  await syncMediaUploads(token);
+  await syncAI(token);
+}
+
     setIsSubmitted(true);
   };
 
@@ -31,52 +61,43 @@ const Observation = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-md mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex items-center mb-6">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate('/login')}
-            className="mr-2"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div className="flex-1 flex justify-center">
-            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-              <svg
-                className="w-6 h-6 text-primary-foreground"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                />
-              </svg>
+      {/* Background */}
+      <div className="fixed inset-0 bg-gradient-to-br from-violet-500/[0.03] via-background to-purple-900/[0.04] pointer-events-none" />
+
+      <TopNav />
+
+      <div className="relative max-w-lg mx-auto px-4 py-8">
+        {/* Form header */}
+        {!isSubmitted && (
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-700 shadow-xl shadow-violet-500/30 mb-4">
+              <Zap className="w-6 h-6 text-white" />
             </div>
+            <h1 className="text-2xl font-black text-foreground tracking-tight">New Observation</h1>
+            <p className="text-sm text-muted-foreground mt-1">Submit a field report from your location</p>
           </div>
-          <div className="w-10" /> {/* Spacer for centering */}
-        </div>
+        )}
 
         {/* Form Container */}
-        <div className="glass-card rounded-2xl p-6">
-          {isSubmitted ? (
-            <SuccessScreen onReset={handleReset} />
-          ) : (
-            <ProblemDetailsForm
-              onSubmit={handleProblemDetailsSubmit}
-              onBack={() => {}}
-            />
-          )}
+        <div className="rounded-2xl border border-violet-500/15 bg-card/60 backdrop-blur-sm shadow-xl shadow-violet-500/5 overflow-hidden">
+          {/* Purple top accent */}
+          <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-violet-500 to-transparent" />
+          
+          <div className="p-6">
+            {isSubmitted ? (
+              <SuccessScreen onReset={handleReset} />
+            ) : (
+              <ProblemDetailsForm
+                onSubmit={handleProblemDetailsSubmit}
+                onBack={() => {}}
+              />
+            )}
+          </div>
         </div>
 
         {/* Footer */}
-        <p className="text-center text-xs text-muted-foreground mt-6">
-          Your data is secure and will only be used to process your report
+        <p className="text-center text-xs text-muted-foreground/60 mt-6">
+          🔒 Your data is encrypted and stored securely
         </p>
       </div>
     </div>

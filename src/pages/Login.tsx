@@ -2,23 +2,48 @@ import { LoginForm } from '@/components/LoginForm';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { Shield } from 'lucide-react';
+import { apiFetch } from '@/services/api';
 
 const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleLoginSubmit = (data: { phone: string; password: string }) => {
-    console.log('Login submitted:', data);
-    toast({
-      title: "Login successful!",
-      description: "Welcome back to your account.",
-    });
-    navigate('/observation');
+  const handleLoginSubmit = async (data: { phone: string; password: string }) => {
+    try {
+      // 🔹 Call FastAPI backend
+      const response = await apiFetch<{ access_token: string }>(
+        '/auth/login',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            phone_number: data.phone,
+            password: data.password,
+          }),
+        }
+      );
+
+      // 🔹 TEMP (until cookies are used)
+      localStorage.setItem('access_token', response.access_token);
+
+      toast({
+        title: 'Login successful',
+        description: 'Welcome back to your account.',
+      });
+
+      navigate('/observation');
+    } catch (error: any) {
+      toast({
+        title: 'Login failed',
+        description: error.message || 'Invalid phone number or password.',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/30 flex flex-col">
       <div className="max-w-md mx-auto px-4 py-8 flex-1 flex flex-col justify-center w-full">
+
         {/* Hero Header */}
         <div className="text-center mb-8 slide-up">
           <div className="relative inline-flex items-center justify-center mb-4">

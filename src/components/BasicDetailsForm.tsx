@@ -205,7 +205,7 @@ export const BasicDetailsForm = ({ onSubmit }: BasicDetailsFormProps) => {
 
       <p className="text-center text-sm text-muted-foreground">
         Already have an account?{' '}
-        <Link to="/login" className="text-primary font-medium hover:underline">
+        <Link to="/" className="text-primary font-medium hover:underline">
           Login
         </Link>
       </p>

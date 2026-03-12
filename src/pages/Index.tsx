@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { BasicDetailsForm } from '@/components/BasicDetailsForm';
 import { UserPlus } from 'lucide-react';
-
+import { apiFetch } from '@/services/api';
 interface UserDetails {
   name: string;
   phone: string;
@@ -12,17 +12,43 @@ interface UserDetails {
 const Index = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+const handleBasicDetailsSubmit = async (data: UserDetails) => {
+  try {
+  // 🔹 Call FastAPI backend
+await apiFetch<void>(
+  '/auth/register',
+  {
+    method: 'POST',
+    body: JSON.stringify({
+      full_name: data.name,
+      phone_number: data.phone,
+      password: data.password,
+    }),
+  }
+);
 
-  const handleBasicDetailsSubmit = (data: UserDetails) => {
-    console.log('Registration submitted:', data);
+
+   
+
     toast({
-      title: "Account Created Successfully!",
+      title: 'Account Created Successfully!',
       description: `Name: ${data.name} | Phone: ${data.phone}`,
     });
+
     setTimeout(() => {
       navigate('/login');
     }, 1500);
-  };
+
+  } catch (error) {
+    toast({
+      title: 'Registration failed',
+      description: 'Phone number may already be registered.',
+      variant: 'destructive',
+    });
+  }
+};
+
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/30 flex flex-col">

@@ -3,6 +3,7 @@ import { Send, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { GPSStatus } from './GPSStatus';
 import { MapPreview } from './MapPreview';
 import { VoiceRecorder } from './VoiceRecorder';
@@ -12,6 +13,8 @@ import { useVoiceRecording } from '@/hooks/useVoiceRecording';
 
 interface ProblemDetailsFormProps {
   onSubmit: (data: {
+    title: string;
+    villageName: string;
     description: string;
     audioBlob: Blob | null;
     images: File[];
@@ -25,9 +28,12 @@ interface ProblemDetailsFormProps {
 }
 
 export const ProblemDetailsForm = ({ onSubmit, onBack }: ProblemDetailsFormProps) => {
+
+  const [title, setTitle] = useState('');
+  const [villageName, setVillageName] = useState('');
   const [description, setDescription] = useState('');
   const [images, setImages] = useState<File[]>([]);
-  
+
   const {
     latitude,
     longitude,
@@ -57,12 +63,14 @@ export const ProblemDetailsForm = ({ onSubmit, onBack }: ProblemDetailsFormProps
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!isAccurate || latitude === null || longitude === null || accuracy === null) {
+
+    if (!isAccurate || latitude === null || longitude === null || accuracy === null || !title) {
       return;
     }
 
     onSubmit({
+      title,
+      villageName,
       description,
       audioBlob,
       images,
@@ -74,10 +82,11 @@ export const ProblemDetailsForm = ({ onSubmit, onBack }: ProblemDetailsFormProps
     });
   };
 
-  const canSubmit = isAccurate && !isGpsLoading && !gpsError;
+  const canSubmit = isAccurate && !isGpsLoading && !gpsError && !!title;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 slide-up">
+
       <div className="flex items-center gap-3 mb-6">
         <Button
           type="button"
@@ -88,6 +97,7 @@ export const ProblemDetailsForm = ({ onSubmit, onBack }: ProblemDetailsFormProps
         >
           <ArrowLeft className="w-5 h-5" />
         </Button>
+
         <div>
           <h1 className="text-xl font-bold text-foreground">
             Describe the Problem
@@ -99,6 +109,7 @@ export const ProblemDetailsForm = ({ onSubmit, onBack }: ProblemDetailsFormProps
       </div>
 
       <div className="space-y-5">
+
         {/* GPS Status */}
         <GPSStatus
           latitude={latitude}
@@ -122,11 +133,41 @@ export const ProblemDetailsForm = ({ onSubmit, onBack }: ProblemDetailsFormProps
           />
         )}
 
+        {/* Title (MANDATORY) */}
+        <div className="space-y-2">
+          <Label htmlFor="title" className="text-sm font-medium">
+            Title <span className="text-destructive">*</span>
+          </Label>
+
+          <Input
+            id="title"
+            placeholder="Enter a short title for the observation..."
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+          />
+        </div>
+
+        {/* Village Name */}
+        <div className="space-y-2">
+          <Label htmlFor="villageName" className="text-sm font-medium">
+            Village Name <span className="text-muted-foreground font-normal">(optional)</span>
+          </Label>
+
+          <Input
+            id="villageName"
+            placeholder="Enter village name..."
+            value={villageName}
+            onChange={(e) => setVillageName(e.target.value)}
+          />
+        </div>
+
         {/* Description */}
         <div className="space-y-2">
           <Label htmlFor="description" className="text-sm font-medium">
             Problem Description <span className="text-muted-foreground font-normal">(optional)</span>
           </Label>
+
           <Textarea
             id="description"
             placeholder="Describe the issue you're reporting..."
@@ -153,10 +194,11 @@ export const ProblemDetailsForm = ({ onSubmit, onBack }: ProblemDetailsFormProps
           images={images}
           onImagesChange={setImages}
         />
+
       </div>
 
-      <Button 
-        type="submit" 
+      <Button
+        type="submit"
         className="w-full h-12 text-base font-semibold shadow-lg shadow-primary/25"
         disabled={!canSubmit}
       >
@@ -166,9 +208,10 @@ export const ProblemDetailsForm = ({ onSubmit, onBack }: ProblemDetailsFormProps
 
       {!canSubmit && !gpsError && (
         <p className="text-xs text-center text-muted-foreground">
-          Waiting for accurate GPS location before submission...
+          Waiting for accurate GPS location and title before submission...
         </p>
       )}
+
     </form>
   );
 };

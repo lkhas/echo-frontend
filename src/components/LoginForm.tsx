@@ -130,7 +130,7 @@ export const LoginForm = ({ onSubmit }: LoginFormProps) => {
 
       <p className="text-center text-sm text-muted-foreground">
         Don't have an account?{' '}
-        <Link to="/" className="text-primary font-medium hover:underline">
+        <Link to="/login" className="text-primary font-medium hover:underline">
           Register
         </Link>
       </p>
