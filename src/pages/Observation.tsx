@@ -8,8 +8,11 @@ import { Zap } from 'lucide-react';
 import { v4 as uuid } from 'uuid';
 import { saveObservationOffline } from '@/offline/saveObservation';
 import { syncOperations } from '@/offline/sync';
+import { syncNarTrans } from '@/offline/syncNarTrans';
 import { syncMediaUploads } from '@/offline/syncMedia';
 import { syncAI } from '@/offline/syncAI';
+import { processAIEvents } from '@/offline/syncAIEvents';
+import { Button } from '@/components/ui/button';
 
 
 interface ProblemDetails {
@@ -28,8 +31,10 @@ interface ProblemDetails {
 const Observation = () => {
   const navigate = useNavigate();
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // 1. Add loading state
 
   const handleProblemDetailsSubmit = async (data: ProblemDetails) => {
+    setIsLoading(true); // 2. Set loading to true when user clicks submit
     const observation = {
   id: uuid(),
   title: data.title,
@@ -43,15 +48,37 @@ const Observation = () => {
   updated_at: Date.now()
 };
 
+   // 1. Save data locally (Crucial first step)
     await saveObservationOffline(observation, data.images, data.audioBlob);
 
-    const token = localStorage.getItem('access_token');
-    if (navigator.onLine && token) {
-  await syncOperations(token);
-  await syncMediaUploads(token);
-  await syncAI(token);
+    // 2. Trigger sync in the background without blocking the UI
+    // We use a self-invoking async function or simply don't 'await' the syncs 
+    // to ensure the user gets immediate feedback.
+   if (navigator.onLine) {
+  const token = localStorage.getItem('access_token');
+  if (token) {
+    (async () => {
+      try {
+        // 1. First, make sure the observation is created in the DB
+        await syncOperations(token);
+        
+        // 2. Then, upload any associated images or audio
+        await syncMediaUploads(token);
+        
+        // 3. Finally, trigger the AI processing (Transcribe -> Translate -> VIM)
+        // Now it won't 404 because Step 1 is guaranteed to be finished!
+        await processAIEvents(token);
+        
+        console.log("Background sync finished successfully");
+      } catch (syncError) {
+        console.error("Background sync failed:", syncError);
+      }
+    })();
+  }
 }
 
+    // 3. Immediately update UI state so user sees SuccessScreen
+    console.log("Setting isSubmitted to true now");
     setIsSubmitted(true);
   };
 
@@ -90,6 +117,7 @@ const Observation = () => {
               <ProblemDetailsForm
                 onSubmit={handleProblemDetailsSubmit}
                 onBack={() => {}}
+                isLoading={isLoading} // Pass the state here
               />
             )}
           </div>

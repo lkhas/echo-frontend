@@ -25,9 +25,10 @@ interface ProblemDetailsFormProps {
     };
   }) => void;
   onBack: () => void;
+  isLoading: boolean; // Add this line
 }
 
-export const ProblemDetailsForm = ({ onSubmit, onBack }: ProblemDetailsFormProps) => {
+export const ProblemDetailsForm = ({ onSubmit, onBack ,isLoading }: ProblemDetailsFormProps) => {
 
   const [title, setTitle] = useState('');
   const [villageName, setVillageName] = useState('');
@@ -151,7 +152,7 @@ export const ProblemDetailsForm = ({ onSubmit, onBack }: ProblemDetailsFormProps
         {/* Village Name */}
         <div className="space-y-2">
           <Label htmlFor="villageName" className="text-sm font-medium">
-            Village Name <span className="text-muted-foreground font-normal">(optional)</span>
+            Village Name <span className="text-muted-foreground font-normal"></span>
           </Label>
 
           <Input
@@ -165,7 +166,7 @@ export const ProblemDetailsForm = ({ onSubmit, onBack }: ProblemDetailsFormProps
         {/* Description */}
         <div className="space-y-2">
           <Label htmlFor="description" className="text-sm font-medium">
-            Problem Description <span className="text-muted-foreground font-normal">(optional)</span>
+            Problem Description <span className="text-muted-foreground font-normal"></span>
           </Label>
 
           <Textarea
@@ -173,7 +174,8 @@ export const ProblemDetailsForm = ({ onSubmit, onBack }: ProblemDetailsFormProps
             placeholder="Describe the issue you're reporting..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            rows={4}
+            rows={6}
+            required
             className="resize-none"
           />
         </div>
