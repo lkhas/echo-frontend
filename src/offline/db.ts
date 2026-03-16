@@ -1,6 +1,6 @@
 import { openDB } from "idb";
 
-export const dbPromise = openDB("echo-db", 3, {
+export const dbPromise = openDB("echo-db", 4, {
   upgrade(db) {
 
     // Observations
@@ -8,9 +8,13 @@ export const dbPromise = openDB("echo-db", 3, {
     obs.createIndex("updated_at", "updated_at");
     obs.createIndex("aiProcessed", "aiProcessed");
 
+    
+
     // Operations (server sync)
     const ops = db.createObjectStore("operations", { keyPath: "op_id" });
     ops.createIndex("status", "status");
+    ops.createIndex("created_at", "created_at");
+
 
     // Media queue
     const media = db.createObjectStore("media_queue", { keyPath: "media_id" });
