@@ -15,6 +15,8 @@ import { syncOperations } from "./offline/sync";
 import { syncMediaUploads } from "./offline/syncMedia";
 import { syncNarTrans } from "./offline/syncNarTrans";
 import { syncAI } from "./offline/syncAI";
+import { processAIEvents } from "./offline/syncAIEvents";
+import { purgeAllConfirmed } from "./offline/purge";
 
 import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/Dashboard";
@@ -45,20 +47,28 @@ const App = () => (
     const token = localStorage.getItem("access_token");
     if (!token) return;
 
-    const runSync = async () => {
-    // 1️⃣ First: must finish
+     // ... inside the App component
+const runSync = async () => {
+  const token = localStorage.getItem("access_token");
+  if (!token) return;
+
+  try {
+    // 1. Sync core operations first
     await syncOperations(token);
-    // 2️⃣ Run these two in parallel
-    // console.log("Narrative trnaslation started")
-      await syncNarTrans(token);
-      await syncMediaUploads(token);
+    
+    // 2. Upload media (Triggers TRANSCRIBE_AUDIO in ai_events if audio exists)
+    await syncMediaUploads(token);
 
+    // 3. Process the AI sequence (Transcribe -> Narrative -> VIM)
+    // This handles reloads and skips finished steps automatically
+    await processAIEvents(token);
 
-    // 3️⃣ Run last
-    console.log("🔥 Starting syncAI");
-
-    await syncAI(token);
-  };
+    // 🔥 Call the cleanup here after all syncs are finished
+  await purgeAllConfirmed();
+  } catch (err) {
+    console.error("Critical sync failure", err);
+  }
+};
 
   runSync();
 
