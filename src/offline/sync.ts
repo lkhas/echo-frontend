@@ -11,8 +11,6 @@ export async function syncOperations(token: string) {
     console.log("❌ Offline, skipping sync");
     syncState.setStatus("offline");
     return;
-
-    return;
   }
 
   syncState.setStatus("syncing");
