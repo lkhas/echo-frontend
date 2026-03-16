@@ -1,17 +1,15 @@
 import { useSyncExternalStore } from "react";
-export type SyncStatus =
-  | "idle"
-  | "offline"
-  | "syncing"
-  | "error"
-  | "up_to_date";
 
-let status: SyncStatus = "idle";
+export type SyncStatus = "idle" | "offline" | "syncing" | "error" | "up_to_date";
+
+let currentStatus: SyncStatus = "idle";
 const listeners = new Set<() => void>();
 
-function setStatus(next: SyncStatus) {
-  status = next;
-  listeners.forEach(l => l());
+// Central function to update state and notify UI
+function updateStatus(next: SyncStatus) {
+  currentStatus = next;
+  console.log(`🔄 Sync status changed to: ${currentStatus}`);
+  listeners.forEach((l) => l());
 }
 
 function subscribe(listener: () => void) {
@@ -20,7 +18,7 @@ function subscribe(listener: () => void) {
 }
 
 function getSnapshot() {
-  return status;
+  return currentStatus;
 }
 
 export function useSyncStatus() {
@@ -28,5 +26,9 @@ export function useSyncStatus() {
 }
 
 export const syncState = {
-  setStatus,
+  get status() {
+    return currentStatus;
+  },
+  // This now correctly calls the function that notifies UI
+  setStatus: (next: SyncStatus) => updateStatus(next),
 };
