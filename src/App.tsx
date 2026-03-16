@@ -42,24 +42,24 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-const deleteDB = (dbName) => {
-  const req = indexedDB.deleteDatabase(dbName);
+// const deleteDB = (dbName) => {
+//   const req = indexedDB.deleteDatabase(dbName);
   
-  req.onsuccess = () => {
-    console.log(`Deleted database: ${dbName}`);
-  };
+//   req.onsuccess = () => {
+//     console.log(`Deleted database: ${dbName}`);
+//   };
   
-  req.onerror = () => {
-    console.error(`Couldn't delete database: ${dbName}`);
-  };
+//   req.onerror = () => {
+//     console.error(`Couldn't delete database: ${dbName}`);
+//   };
   
-  req.onblocked = () => {
-    console.warn(`Deletion blocked: ${dbName}. Close all tabs.`);
-  };
-};
+//   req.onblocked = () => {
+//     console.warn(`Deletion blocked: ${dbName}. Close all tabs.`);
+//   };
+// };
 
-// Usage
-deleteDB('echo-db');
+// // Usage
+// deleteDB('echo-db');
 
 // ─────────────────────────────────────────────────────────────────────────────
 const App = () => (
