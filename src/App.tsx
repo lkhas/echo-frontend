@@ -41,6 +41,26 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
   return <>{children}</>;
 };
+
+const deleteDB = (dbName) => {
+  const req = indexedDB.deleteDatabase(dbName);
+  
+  req.onsuccess = () => {
+    console.log(`Deleted database: ${dbName}`);
+  };
+  
+  req.onerror = () => {
+    console.error(`Couldn't delete database: ${dbName}`);
+  };
+  
+  req.onblocked = () => {
+    console.warn(`Deletion blocked: ${dbName}. Close all tabs.`);
+  };
+};
+
+// Usage
+deleteDB('echo-db');
+
 // ─────────────────────────────────────────────────────────────────────────────
 const App = () => (
   useEffect(() => {
@@ -78,6 +98,8 @@ const runSync = async () => {
     window.removeEventListener("online", runSync);
   };
 }, []),
+
+
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <TooltipProvider>
