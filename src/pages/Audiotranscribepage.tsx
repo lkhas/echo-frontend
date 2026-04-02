@@ -71,8 +71,10 @@ export default function AudioTranscribePage() {
       const token = localStorage.getItem('access_token');
       // apiFetch wraps the base URL — but SSE needs a raw fetch with ReadableStream.
       // So we grab the base URL from apiFetch's config and call fetch directly.
+            const baseUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 
-const res = await fetch(`/api/transcribe`, {
+
+const res = await fetch(`${baseUrl}/transcribe`, {
   method: 'POST',
   headers: token ? { Authorization: `Bearer ${token}` } : {},
   body: formData,
