@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { User, Phone, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { User, Phone, Lock, ArrowRight, Eye, EyeOff, Loader2 } from 'lucide-react'; // Added Loader2
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,9 +7,10 @@ import { Link } from 'react-router-dom';
 
 interface BasicDetailsFormProps {
   onSubmit: (data: { name: string; phone: string; password: string }) => void;
+  isLoading?: boolean; // Added isLoading prop
 }
 
-export const BasicDetailsForm = ({ onSubmit }: BasicDetailsFormProps) => {
+export const BasicDetailsForm = ({ onSubmit, isLoading }: BasicDetailsFormProps) => {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -29,6 +30,8 @@ export const BasicDetailsForm = ({ onSubmit }: BasicDetailsFormProps) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return; // Prevent multiple clicks during loading
+
     const newErrors: { name?: string; phone?: string; password?: string; confirmPassword?: string } = {};
 
     if (!name.trim()) {
@@ -84,6 +87,7 @@ export const BasicDetailsForm = ({ onSubmit }: BasicDetailsFormProps) => {
               id="name"
               type="text"
               placeholder="Enter your full name"
+              disabled={isLoading} // Disable input during loading
               value={name}
               onChange={(e) => {
                 setName(e.target.value);
@@ -108,6 +112,7 @@ export const BasicDetailsForm = ({ onSubmit }: BasicDetailsFormProps) => {
               id="phone"
               type="tel"
               placeholder="Enter your phone number"
+              disabled={isLoading} // Disable input during loading
               value={phone}
               onChange={(e) => {
                 setPhone(e.target.value);
@@ -132,6 +137,7 @@ export const BasicDetailsForm = ({ onSubmit }: BasicDetailsFormProps) => {
               id="password"
               type={showPassword ? 'text' : 'password'}
               placeholder="Create a password"
+              disabled={isLoading} // Disable input during loading
               value={password}
               onChange={(e) => {
                 setPassword(e.target.value);
@@ -142,7 +148,8 @@ export const BasicDetailsForm = ({ onSubmit }: BasicDetailsFormProps) => {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              disabled={isLoading}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
             >
               {showPassword ? (
                 <EyeOff className="w-5 h-5" />
@@ -170,6 +177,7 @@ export const BasicDetailsForm = ({ onSubmit }: BasicDetailsFormProps) => {
               id="confirmPassword"
               type={showConfirmPassword ? 'text' : 'password'}
               placeholder="Confirm your password"
+              disabled={isLoading} // Disable input during loading
               value={confirmPassword}
               onChange={(e) => {
                 setConfirmPassword(e.target.value);
@@ -180,7 +188,8 @@ export const BasicDetailsForm = ({ onSubmit }: BasicDetailsFormProps) => {
             <button
               type="button"
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              disabled={isLoading}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
             >
               {showConfirmPassword ? (
                 <EyeOff className="w-5 h-5" />
@@ -197,10 +206,20 @@ export const BasicDetailsForm = ({ onSubmit }: BasicDetailsFormProps) => {
 
       <Button 
         type="submit" 
+        disabled={isLoading} // Disable button while loading
         className="w-full h-12 text-base font-semibold shadow-lg shadow-primary/25"
       >
-        Register
-        <ArrowRight className="w-5 h-5 ml-2" />
+        {isLoading ? (
+          <>
+            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+            Registering...
+          </>
+        ) : (
+          <>
+            Register
+            <ArrowRight className="w-5 h-5 ml-2" />
+          </>
+        )}
       </Button>
 
       <p className="text-center text-sm text-muted-foreground">

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Phone, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Phone, Lock, ArrowRight, Eye, EyeOff, Loader2 } from 'lucide-react'; // Added Loader2
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,9 +7,10 @@ import { Link } from 'react-router-dom';
 
 interface LoginFormProps {
   onSubmit: (data: { phone: string; password: string }) => void;
+  isLoading?: boolean; // Added isLoading prop
 }
 
-export const LoginForm = ({ onSubmit }: LoginFormProps) => {
+export const LoginForm = ({ onSubmit, isLoading }: LoginFormProps) => {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -26,6 +27,8 @@ export const LoginForm = ({ onSubmit }: LoginFormProps) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return; // Prevent submission if already loading
+
     const newErrors: { phone?: string; password?: string } = {};
 
     if (!phone.trim()) {
@@ -71,6 +74,7 @@ export const LoginForm = ({ onSubmit }: LoginFormProps) => {
               id="phone"
               type="tel"
               placeholder="Enter your phone number"
+              disabled={isLoading} // Disable input during loading
               value={phone}
               onChange={(e) => {
                 setPhone(e.target.value);
@@ -95,6 +99,7 @@ export const LoginForm = ({ onSubmit }: LoginFormProps) => {
               id="password"
               type={showPassword ? 'text' : 'password'}
               placeholder="Enter your password"
+              disabled={isLoading} // Disable input during loading
               value={password}
               onChange={(e) => {
                 setPassword(e.target.value);
@@ -105,7 +110,8 @@ export const LoginForm = ({ onSubmit }: LoginFormProps) => {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              disabled={isLoading}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
             >
               {showPassword ? (
                 <EyeOff className="w-5 h-5" />
@@ -122,15 +128,25 @@ export const LoginForm = ({ onSubmit }: LoginFormProps) => {
 
       <Button 
         type="submit" 
-        className="w-full h-12 text-base font-semibold shadow-lg shadow-primary/25"
+        disabled={isLoading} // Button becomes unclickable
+        className="w-full h-12 text-base font-semibold shadow-lg shadow-primary/25 transition-all"
       >
-        Login
-        <ArrowRight className="w-5 h-5 ml-2" />
+        {isLoading ? (
+          <>
+            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+            Verifying...
+          </>
+        ) : (
+          <>
+            Login
+            <ArrowRight className="w-5 h-5 ml-2" />
+          </>
+        )}
       </Button>
 
       <p className="text-center text-sm text-muted-foreground">
         Don't have an account?{' '}
-        <Link to="/login" className="text-primary font-medium hover:underline">
+        <Link to="/Login" className="text-primary font-medium hover:underline">
           Register
         </Link>
       </p>
