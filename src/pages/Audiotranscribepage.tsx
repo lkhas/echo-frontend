@@ -71,20 +71,25 @@ export default function AudioTranscribePage() {
       const token = localStorage.getItem('access_token');
       // apiFetch wraps the base URL — but SSE needs a raw fetch with ReadableStream.
       // So we grab the base URL from apiFetch's config and call fetch directly.
-      const baseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
-      const res = await fetch(`${baseUrl}/transcribe`, {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: formData,
-        signal: abortRef.current.signal,
-      });
 
-      if (!res.ok) throw new Error(`Server error: ${res.status} ${res.statusText}`);
-      if (!res.body) throw new Error('No response body');
+const res = await fetch(`/api/transcribe`, {
+  method: 'POST',
+  headers: token ? { Authorization: `Bearer ${token}` } : {},
+  body: formData,
+  signal: abortRef.current?.signal,
+});
 
-      const reader  = res.body.getReader();
-      const decoder = new TextDecoder();
-      let   buffer  = '';
+if (!res.ok) {
+  throw new Error(`Server error: ${res.status} ${res.statusText}`);
+}
+
+if (!res.body) {
+  throw new Error('No response body');
+}
+
+const reader = res.body.getReader();
+const decoder = new TextDecoder();
+let buffer = '';
 
       while (true) {
         const { done: streamDone, value } = await reader.read();
