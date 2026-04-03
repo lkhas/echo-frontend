@@ -4,19 +4,29 @@ import {
   Upload, Mic, Languages,
   X, FileAudio, Loader2, AlertCircle, CheckCircle2,
 } from 'lucide-react';
-import { apiFetch } from '@/services/api';
 
 // ── Step metadata ─────────────────────────────────────────────────────────────
 const STEP_LABELS: Record<string, string> = {
-  saving:       'Saving file',
-  normalizing:  'Normalizing audio',
-  splitting:    'Splitting chunks',
-  transcribing: 'Transcribing',
-  merging:      'Merging results',
-  done:         'Complete',
+  uploading:      'Uploading',
+  splitting:      'Splitting',
+  uploading_chunk:'Sending to AI',
+  transcribing:   'Transcribing',
+  merging:        'Merging',
+  done:           'Complete',
 };
 
-const STEP_ORDER = ['saving', 'normalizing', 'splitting', 'transcribing', 'merging', 'done'];
+// Ordered list shown in the pipeline UI (excluding 'done' which is terminal)
+const STEP_ORDER = ['uploading', 'splitting', 'uploading_chunk', 'transcribing', 'merging', 'done'];
+
+// Map SSE step names → pipeline index so intermediate steps highlight correctly
+const STEP_INDEX: Record<string, number> = {
+  uploading:       0,
+  splitting:       1,
+  uploading_chunk: 2,
+  transcribing:    3,
+  merging:         4,
+  done:            5,
+};
 
 function formatBytes(b: number) {
   return b < 1024 * 1024 ? `${(b / 1024).toFixed(1)} KB` : `${(b / (1024 ** 2)).toFixed(1)} MB`;
@@ -69,29 +79,25 @@ export default function AudioTranscribePage() {
 
     try {
       const token = localStorage.getItem('access_token');
-      // apiFetch wraps the base URL — but SSE needs a raw fetch with ReadableStream.
-      // So we grab the base URL from apiFetch's config and call fetch directly.
-            const baseUrl = (import.meta.env.VITE_API || '').replace(/\/$/, '');
+      const baseUrl = (import.meta.env.VITE_API || '').replace(/\/$/, '');
 
+      const res = await fetch(`${baseUrl}/transcribe`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+        signal: abortRef.current?.signal,
+      });
 
-const res = await fetch(`${baseUrl}/transcribe`, {
-  method: 'POST',
-  headers: token ? { Authorization: `Bearer ${token}` } : {},
-  body: formData,
-  signal: abortRef.current?.signal,
-});
+      if (!res.ok) {
+        throw new Error(`Server error: ${res.status} ${res.statusText}`);
+      }
+      if (!res.body) {
+        throw new Error('No response body');
+      }
 
-if (!res.ok) {
-  throw new Error(`Server error: ${res.status} ${res.statusText}`);
-}
-
-if (!res.body) {
-  throw new Error('No response body');
-}
-
-const reader = res.body.getReader();
-const decoder = new TextDecoder();
-let buffer = '';
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
 
       while (true) {
         const { done: streamDone, value } = await reader.read();
@@ -99,19 +105,18 @@ let buffer = '';
 
         buffer += decoder.decode(value, { stream: true });
         const frames = buffer.split('\n\n');
-        buffer = frames.pop() ?? '';   // keep incomplete last frame
+        buffer = frames.pop() ?? '';
 
         for (const frame of frames) {
           if (!frame.trim()) continue;
-          if (frame.startsWith(':')) continue;   // heartbeat ping — ignore
+          if (frame.startsWith(':')) continue;
 
-          // Parse SSE frame: "event: xxx\ndata: {...}"
           const eventMatch = frame.match(/^event:\s*(.+)$/m);
           const dataMatch  = frame.match(/^data:\s*(.+)$/ms);
           if (!eventMatch || !dataMatch) continue;
 
           const eventName = eventMatch[1].trim();
-          let   payload: any;
+          let payload: any;
           try { payload = JSON.parse(dataMatch[1].trim()); }
           catch { continue; }
 
@@ -119,6 +124,9 @@ let buffer = '';
             setStep(payload.step ?? '');
             setPercent(payload.percent ?? 0);
             setDetail(payload.detail ?? '');
+          } else if (eventName === 'warning') {
+            // Show warnings inline in detail without stopping progress
+            setDetail(payload.message ?? payload.detail ?? '');
           } else if (eventName === 'result') {
             setPercent(100);
             setStep('done');
@@ -147,8 +155,9 @@ let buffer = '';
   };
 
   // ── Derived ───────────────────────────────────────────────────────────────
-  const canStart      = !!file && !processing;
-  const currentStepIdx = STEP_ORDER.indexOf(step);
+  const canStart        = !!file && !processing;
+  const currentStepIdx  = STEP_INDEX[step] ?? -1;
+  const visibleSteps    = STEP_ORDER.filter(s => s !== 'done');
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -177,13 +186,13 @@ let buffer = '';
           }}>
             <Mic size={24} color="#fff" />
           </div>
-         <h1 style={{
-  fontSize: 26,
-  fontWeight: 700,
-  margin: '0 0 6px',
-  letterSpacing: -0.5,
-  color: 'var(--foreground)'
-}}>
+          <h1 style={{
+            fontSize: 26,
+            fontWeight: 700,
+            margin: '0 0 6px',
+            letterSpacing: -0.5,
+            color: 'var(--foreground)'
+          }}>
             Audio Transcription
           </h1>
           <p style={{ fontSize: 13, color: 'var(--foreground)', margin: 0 }}>
@@ -193,8 +202,8 @@ let buffer = '';
 
         {/* ── Card ── */}
         <div style={{
-         background: 'var(--card)',border: '1px solid var(--border)',
-                   borderRadius: 24, padding: 28, backdropFilter: 'blur(12px)',
+          background: 'var(--card)', border: '1px solid var(--border)',
+          borderRadius: 24, padding: 28, backdropFilter: 'blur(12px)',
           boxShadow: '0 24px 64px rgba(0,0,0,0.4)', display: 'flex',
           flexDirection: 'column', gap: 20,
         }}>
@@ -206,19 +215,19 @@ let buffer = '';
             onDragLeave={() => setDragOver(false)}
             onClick={() => !file && !processing && fileRef.current?.click()}
             style={{
-             border: `2px dashed ${
-  dragOver ? 'var(--primary)' :
-  file ? '#10b981' :
-  'var(--border)'
-}`,
+              border: `2px dashed ${
+                dragOver ? 'var(--primary)' :
+                file ? '#10b981' :
+                'var(--border)'
+              }`,
               borderRadius: 16, padding: '26px 20px', textAlign: 'center',
               cursor: file || processing ? 'default' : 'pointer',
               transition: 'all 0.2s',
-             background: dragOver
-  ? 'color-mix(in srgb, var(--primary) 8%, transparent)'
-  : file
-  ? 'rgba(16,185,129,0.05)'
-  : 'var(--card)',
+              background: dragOver
+                ? 'color-mix(in srgb, var(--primary) 8%, transparent)'
+                : file
+                ? 'rgba(16,185,129,0.05)'
+                : 'var(--card)',
             }}
           >
             <input
@@ -258,7 +267,7 @@ let buffer = '';
                     margin: '0 0 2px', fontSize: 14, fontWeight: 600, color: 'var(--foreground)',
                     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                   }}>{file.name}</p>
-                  <p style={{ margin: 0, fontSize: 12, color: '#var(--muted-foreground)' }}>{formatBytes(file.size)}</p>
+                  <p style={{ margin: 0, fontSize: 12, color: 'var(--muted-foreground)' }}>{formatBytes(file.size)}</p>
                 </div>
                 {!processing && (
                   <button
@@ -279,8 +288,6 @@ let buffer = '';
             <p style={{ margin: '0 0 10px', fontSize: 11, fontWeight: 700, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: 1 }}>
               Audio Language
             </p>
-
-            {/* Tab */}
             <div style={{
               display: 'flex', background: 'var(--muted)', borderRadius: 10,
               padding: 3, marginBottom: 10, border: '1px solid var(--border)',
@@ -300,32 +307,34 @@ let buffer = '';
                 </button>
               ))}
             </div>
-
-
           </div>
 
           {/* ── Progress ── */}
           {processing && (
             <div style={{
-             background: 'color-mix(in srgb, var(--primary) 10%, transparent)',
-border: '1px solid var(--border)',
-              borderRadius: 16, padding: 16, display: 'flex', flexDirection: 'column', gap: 14,
+              background: 'color-mix(in srgb, var(--primary) 10%, transparent)',
+              border: '1px solid var(--border)',
+              borderRadius: 16, padding: 18, display: 'flex', flexDirection: 'column', gap: 16,
             }}>
+
               {/* Step pipeline */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
-                {STEP_ORDER.filter(s => s !== 'done').map((s, i) => {
-                  const idx   = STEP_ORDER.indexOf(s);
-                  const past  = currentStepIdx > idx;
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                {visibleSteps.map((s, i) => {
+                  const idx    = STEP_INDEX[s];
+                  const past   = currentStepIdx > idx;
                   const active = currentStepIdx === idx;
-                  const color  = past ? '#10b981' : active ? '#6366f1' : '#2a2a3a';
-                  const textC  = past ? '#10b981' : active ? '#818cf8' : '#3a3a52';
+                  const dotColor  = past ? '#10b981' : active ? '#6366f1' : 'var(--muted-foreground)';
+                  const textColor = past ? '#10b981' : active ? '#818cf8' : 'var(--muted-foreground)';
                   return (
-                    <div key={s} style={{ display: 'flex', alignItems: 'center', flex: i < STEP_ORDER.length - 2 ? 1 : undefined }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                    <div key={s} style={{
+                      display: 'flex', alignItems: 'center',
+                      flex: i < visibleSteps.length - 1 ? 1 : undefined,
+                    }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
                         <div style={{
                           width: 28, height: 28, borderRadius: '50%',
-                          border: `2px solid ${color}`,
-                          background: past ? '#10b98120' : active ? '#6366f120' : 'transparent',
+                          border: `2px solid ${dotColor}`,
+                          background: past ? 'rgba(16,185,129,0.12)' : active ? 'rgba(99,102,241,0.12)' : 'transparent',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           transition: 'all 0.3s',
                         }}>
@@ -333,18 +342,21 @@ border: '1px solid var(--border)',
                             ? <CheckCircle2 size={14} color="#10b981" />
                             : active
                               ? <Loader2 size={13} color="#818cf8" style={{ animation: 'spin 1s linear infinite' }} />
-                              : <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#2a2a3a' }} />
+                              : <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--muted-foreground)', opacity: 0.3 }} />
                           }
                         </div>
-                        <span style={{ fontSize: 9, color: textC, whiteSpace: 'nowrap', fontWeight: active ? 700 : 400 }}>
+                        <span style={{
+                          fontSize: 9, color: textColor,
+                          whiteSpace: 'nowrap', fontWeight: active ? 700 : 400,
+                        }}>
                           {STEP_LABELS[s]}
                         </span>
                       </div>
-                      {i < STEP_ORDER.filter(s => s !== 'done').length - 1 && (
+                      {i < visibleSteps.length - 1 && (
                         <div style={{
                           flex: 1, height: 2, margin: '0 4px', marginBottom: 14,
                           background: past ? '#10b981' : 'rgba(255,255,255,0.06)',
-                          transition: 'background 0.3s',
+                          transition: 'background 0.4s',
                         }} />
                       )}
                     </div>
@@ -355,13 +367,20 @@ border: '1px solid var(--border)',
               {/* Progress bar */}
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                  <span style={{ fontSize: 12, color: '#818cf8', fontWeight: 600 }}>{detail}</span>
-                  <span style={{ fontSize: 12, color: '#6366f1', fontWeight: 700 }}>{percent}%</span>
+                  <span style={{
+                    fontSize: 12, color: '#818cf8', fontWeight: 500,
+                    maxWidth: '80%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>
+                    {detail}
+                  </span>
+                  <span style={{ fontSize: 12, color: '#6366f1', fontWeight: 700, flexShrink: 0 }}>
+                    {percent}%
+                  </span>
                 </div>
                 <div style={{ height: 6, background: 'var(--muted)', borderRadius: 100, overflow: 'hidden' }}>
                   <div style={{
                     height: '100%', borderRadius: 100,
-                    width: `${percent}%`, transition: 'width 0.5s ease',
+                    width: `${percent}%`, transition: 'width 0.6s ease',
                     background: 'linear-gradient(90deg, #6366f1, #8b5cf6)',
                     boxShadow: '0 0 10px rgba(99,102,241,0.5)',
                   }} />
@@ -388,7 +407,7 @@ border: '1px solid var(--border)',
               <button onClick={handleCancel} style={{
                 flex: 1, padding: '13px', borderRadius: 14, border: '1px solid red',
                 background: 'color-mix(in srgb, red 8%, transparent)',
- color: '#f87171',
+                color: '#f87171',
                 fontSize: 14, fontWeight: 700, cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               }}>

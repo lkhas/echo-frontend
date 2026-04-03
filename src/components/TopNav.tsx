@@ -1,12 +1,12 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Plus, ImageIcon, LogOut, User, Zap } from 'lucide-react';
+import { LayoutDashboard, Plus, ImageIcon, LogOut, User, Zap, AudioLinesIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
 const navItems = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'New Report', href: '/observation', icon: Plus, isPrimary: true },
-  { label: 'Gallery', href: '/gallery', icon: ImageIcon },
+  { label: 'Translation', href: '/transcribe', icon: AudioLinesIcon },
 ];
 
 export const TopNav = () => {
