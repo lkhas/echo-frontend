@@ -6,7 +6,7 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 const navItems = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'New Report', href: '/observation', icon: Plus, isPrimary: true },
-  { label: 'Translation', href: '/transcribe', icon: AudioLinesIcon },
+  // { label: 'Translation', href: '/transcribe', icon: AudioLinesIcon },
 ];
 
 export const TopNav = () => {

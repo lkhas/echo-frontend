@@ -1,6 +1,9 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mic, Image, MapPin, Search, ArrowUpDown, ArrowUp, ArrowDown, Eye, FileDown, Loader2 } from 'lucide-react';
+import { 
+  Mic, Image, MapPin, Search, ArrowUpDown, ArrowUp, ArrowDown, 
+  Eye, FileDown, Loader2, Trash2 
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -10,11 +13,20 @@ import {
 import {
   Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious,
 } from '@/components/ui/pagination';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { MediaPreviewDialog } from './MediaPreviewDialog';
 import { exportObservationToWord } from '@/lib/exportWordDocument';
 import { toast } from 'sonner';
-
-// Define the Observation interface to match the mapped data from Dashboard.tsx
+import { apiFetch } from '@/services/api';
 interface Observation {
   id: string;
   villageName: string;
@@ -30,8 +42,11 @@ interface Observation {
   status: string;
 }
 
+// 1. Add this to your interface
 interface ObservationTableProps {
   observations: Observation[];
+  onDeleteSuccess: () => void;
+  userRole?: string; // Add this line
 }
 
 const typeColors: Record<string, string> = {
@@ -46,14 +61,20 @@ type SortKey = 'createdAt' | 'observationType' | 'villageName';
 type SortDir = 'asc' | 'desc';
 const ITEMS_PER_PAGE = 5;
 
-export const ObservationTable = ({ observations }: ObservationTableProps) => {
-  const navigate = useNavigate();
+export const ObservationTable = ({ observations, onDeleteSuccess, userRole}: ObservationTableProps) => {  const navigate = useNavigate();
+
+
+  // State Management
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [sortKey, setSortKey] = useState<SortKey>('createdAt');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [mediaObs, setMediaObs] = useState<Observation | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  
+  // Delete States
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -103,13 +124,38 @@ export const ObservationTable = ({ observations }: ObservationTableProps) => {
     }
   };
 
+  const confirmDelete = async () => {
+    if (!deleteId) return;
+    setIsDeleting(true);
+    try {
+      const token = localStorage.getItem('access_token');
+    
+    await apiFetch(`/observations/${deleteId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+      
+        toast.success("Observation deleted successfully");
+        // Reload to refresh the local list
+        onDeleteSuccess();
+      
+      
+    } catch (err) {
+      toast.error("Failed to delete observation");
+    } finally {
+      setIsDeleting(false);
+      setDeleteId(null);
+    }
+  };
+
   return (
     <>
       <div className="glass-card rounded-2xl overflow-hidden slide-up">
         <div className="p-5 border-b border-border/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold text-foreground">Recent Observations</h2>
-            <p className="text-sm text-muted-foreground">All submitted problem reports</p>
+            <p className="text-sm text-muted-foreground">Manage and analyze reports</p>
           </div>
           <div className="relative w-full sm:w-72">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -126,15 +172,15 @@ export const ObservationTable = ({ observations }: ObservationTableProps) => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('observationType')}>
+                <TableHead className="cursor-pointer select-none" onClick={() => toggleSort('observationType')}>
                   <span className="flex items-center gap-1.5">Type <SortIcon column="observationType" /></span>
                 </TableHead>
-                <TableHead className="cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('villageName')}>
+                <TableHead className="cursor-pointer select-none" onClick={() => toggleSort('villageName')}>
                   <span className="flex items-center gap-1.5">Village <SortIcon column="villageName" /></span>
                 </TableHead>
                 <TableHead className="hidden md:table-cell">Description</TableHead>
                 <TableHead>Media</TableHead>
-                <TableHead className="cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('createdAt')}>
+                <TableHead className="cursor-pointer select-none" onClick={() => toggleSort('createdAt')}>
                   <span className="flex items-center gap-1.5">Date <SortIcon column="createdAt" /></span>
                 </TableHead>
                 <TableHead className="text-center">Actions</TableHead>
@@ -144,7 +190,7 @@ export const ObservationTable = ({ observations }: ObservationTableProps) => {
               {paginated.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center text-muted-foreground py-10">
-                    No observations match your search.
+                    No observations found.
                   </TableCell>
                 </TableRow>
               ) : (
@@ -167,26 +213,15 @@ export const ObservationTable = ({ observations }: ObservationTableProps) => {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         {obs.imageUrls && obs.imageUrls.length > 0 && (
-                          <button
-                            onClick={() => setMediaObs(obs)}
-                            className="flex items-center gap-1 text-muted-foreground hover:text-primary transition-colors"
-                            title="View photos"
-                          >
+                          <button onClick={() => setMediaObs(obs)} className="flex items-center gap-1 text-muted-foreground hover:text-primary transition-colors">
                             <Image className="w-4 h-4" />
                             <span className="text-xs font-medium">{obs.imageCount}</span>
                           </button>
                         )}
                         {obs.hasAudio && (
-                          <button
-                            onClick={() => setMediaObs(obs)}
-                            className="flex items-center gap-1 text-muted-foreground hover:text-primary transition-colors"
-                            title="Play audio"
-                          >
+                          <button onClick={() => setMediaObs(obs)} className="flex items-center gap-1 text-muted-foreground hover:text-primary transition-colors">
                             <Mic className="w-4 h-4" />
                           </button>
-                        )}
-                        {!obs.hasAudio && (!obs.imageUrls || obs.imageUrls.length === 0) && (
-                          <span className="text-xs text-muted-foreground/50">—</span>
                         )}
                       </div>
                     </TableCell>
@@ -200,26 +235,31 @@ export const ObservationTable = ({ observations }: ObservationTableProps) => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 rounded-lg opacity-60 group-hover:opacity-100 transition-opacity"
+                          className="h-8 w-8 rounded-lg"
                           onClick={() => navigate(`/observation/${obs.id}`)}
-                          title="View details"
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 rounded-lg opacity-60 group-hover:opacity-100 transition-opacity"
+                          className="h-8 w-8 rounded-lg"
                           onClick={() => handleDownloadWord(obs)}
                           disabled={downloadingId === obs.id}
-                          title="Download Word document"
                         >
-                          {downloadingId === obs.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <FileDown className="w-4 h-4" />
-                          )}
+                          {downloadingId === obs.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
                         </Button>
+                       {/* ✅ ONLY show delete button IF user is admin */}
+    {userRole === 'admin' && (
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 text-destructive hover:bg-destructive/10"
+        onClick={() => setDeleteId(obs.id)}
+      >
+        <Trash2 className="w-4 h-4" />
+      </Button>
+    )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -229,11 +269,9 @@ export const ObservationTable = ({ observations }: ObservationTableProps) => {
           </Table>
         </div>
 
+        {/* Pagination */}
         {totalPages > 1 && (
-          <div className="p-4 border-t border-border/50 flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">
-              {filtered.length} result{filtered.length !== 1 ? 's' : ''} · Page {safePage} of {totalPages}
-            </span>
+          <div className="p-4 border-t border-border/50">
             <Pagination>
               <PaginationContent>
                 <PaginationItem>
@@ -274,6 +312,29 @@ export const ObservationTable = ({ observations }: ObservationTableProps) => {
           title={`${mediaObs.villageName} — ${mediaObs.observationType}`}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent className="rounded-2xl border-border/60">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-xl font-bold">Delete Observation?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action will remove the observation from the database and delete all associated photos/audio from cloud storage. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={(e) => { e.preventDefault(); confirmDelete(); }}
+              disabled={isDeleting}
+              className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Delete Permanently
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };

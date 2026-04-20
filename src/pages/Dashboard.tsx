@@ -8,6 +8,7 @@ import { AnalyticsCharts } from '@/components/dashboard/AnalyticsCharts';
 import { DashboardFilters } from '@/components/dashboard/DashboardFilters';
 import { TopNav } from '@/components/TopNav';
 import { exportToCSV, exportToPDF } from '@/lib/exportObservations';
+import { getUserDataFromToken } from '@/lib/auth';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,16 +16,32 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { apiFetch } from '@/services/api';
+import { toast } from 'sonner';
+
 
 const DashboardMap = lazy(() => import('@/components/dashboard/DashboardMap').then(m => ({ default: m.DashboardMap })));
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  
   const [observations, setObservations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
+  const [role, setRole] = useState<string | undefined>();
+  
+  useEffect(() => {
+    const payload = getUserDataFromToken();
+    if (payload) {
+      console.log("Logged in User Role:", payload.role); // 👈 Add this to debug
+      // Access the 'role' field we added to the JWT in the backend logic
+      setRole(payload.role);
+
+    }
+                handleRefresh();
+
+  }, []);
 
   const validObservations = observations.filter(
     (obs) =>
@@ -40,6 +57,7 @@ const Dashboard = () => {
         validObservations.reduce((s, o) => s + o.longitude, 0) / validObservations.length,
       ] as [number, number]
     : [20.5937, 78.9629] as [number, number];
+    
 
   useEffect(() => {
     const fetchAllData = async () => {
@@ -94,6 +112,61 @@ const Dashboard = () => {
 
     fetchAllData();
   }, []);
+
+  // 1. Create the refresh function
+// Inside Dashboard.tsx
+const handleRefresh = async () => {
+  setLoading(true);
+  try {
+    // Cast the response to any[] or a specific interface
+       const token = localStorage.getItem('access_token');
+        if (!token) return;
+    const data = await apiFetch<any[]>('/observations', {
+          method: "GET",
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+    // If apiFetch returns the data directly:
+    
+        const mappedData = data.map((obs: any) => {
+          const lat = parseFloat(obs.latitude);
+          const lng = parseFloat(obs.longitude);
+          let count = 0;
+          const rawUrls = obs.image_urls;
+
+          if (Array.isArray(rawUrls)) {
+            count = rawUrls.length;
+          } else if (typeof rawUrls === 'string') {
+            if (rawUrls.startsWith('{') && rawUrls.endsWith('}')) {
+              const cleaned = rawUrls.substring(1, rawUrls.length - 1);
+              count = cleaned.trim() ? cleaned.split(',').length : 0;
+            }
+          }
+
+          return {
+            ...obs,
+            latitude: isNaN(lat) ? null : lat,
+            longitude: isNaN(lng) ? null : lng,
+            observationType: obs.observation_type,
+            villageName: obs.village_name,
+            description: obs.narrative,
+            imageCount: count,
+            imageUrls: obs.image_urls || [],
+            hasAudio: !!obs.audio_url,
+            sdg: obs.sdg || null,
+            domain: obs.domain || null,
+            dimension: obs.dimension || null,
+            createdAt: obs.updated_at || obs.created_at,
+          };
+        });
+
+        setObservations(mappedData);
+  } catch (error) {
+    console.error("Failed to refresh:", error);
+    toast.error("Failed to refresh table");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const filtered = useMemo(() => {
     return observations.filter((obs) => {
@@ -193,7 +266,12 @@ const Dashboard = () => {
         </div>
 
         {/* Table */}
-        <ObservationTable observations={filtered} />
+       {/* // 2. Pass it to the table component */}
+<ObservationTable 
+  observations={filtered} 
+  onDeleteSuccess={handleRefresh} 
+  userRole={role} // Pass the role to toggle the delete button
+/>
       </div>
     </div>
   );

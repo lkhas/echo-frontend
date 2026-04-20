@@ -10,6 +10,8 @@ export async function processAIEvents(token: string) {
   for (const event of events) {
     try {
       // Step A: Transcription
+      event.status = "processing";
+      await db.put("ai_events", event);
       if (event.type === "TRANSCRIBE_AUDIO") {
 
         const obs = await db.get("observations", event.observation_id);
@@ -33,6 +35,7 @@ export async function processAIEvents(token: string) {
           created_at: Date.now()
         });
       }
+      await processAIEvents(token); // 🔥 continue immediately
 
       // Step B: Translation (or jump here if no audio)
       if (event.type === "TRANSLATE_NARRATIVE") {
@@ -49,6 +52,8 @@ export async function processAIEvents(token: string) {
           created_at: Date.now()
         });
       }
+
+      await processAIEvents(token); // 🔥 continue immediately
 
       // Step C: VIM
       if (event.type === "RUN_VIM") {
