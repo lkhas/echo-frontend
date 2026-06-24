@@ -125,11 +125,25 @@ const [vimData, setVimData] = useState<any[]>([]);
 
 useEffect(() => {
   if (!id) return;
-apiFetch(`/vim/${id}`)
-  .then((data) => {
-    setVimData(data as any[]); // Explicitly cast to array
-  })
-  .catch(() => setVimData([]));
+
+  const fetchVim = async () => {
+    try {
+      const token = localStorage.getItem("access_token");
+
+      const data = await apiFetch<any[]>(`/vim/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      setVimData(data);
+    } catch (err) {
+      console.error("Failed to load VIM", err);
+      setVimData([]);
+    }
+  };
+
+  fetchVim();
 }, [id]);
 
 // In the return statement, render the table:
