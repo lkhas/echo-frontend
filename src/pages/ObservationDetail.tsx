@@ -23,6 +23,8 @@ import { apiFetch } from '@/services/api';
 import { toast } from 'sonner';
 import 'leaflet/dist/leaflet.css';
 import TranscriptViewer from "@/components/TranscriptViewer";
+// Add this import near the top of ObservationDetail.tsx
+import { VimTable } from "@/components/VimTable";
 
 
 interface Observation {
@@ -71,6 +73,8 @@ const ObservationDetail = () => {
   const [currentImage, setCurrentImage] = useState(0);
   const [downloading, setDownloading] = useState(false);
 const [transcription, setTranscription] = useState<any>(null);
+const [vimData, setVimData] = useState<any[]>([]);
+
   useEffect(() => {
     const fetchDetail = async () => {
       try {
@@ -116,6 +120,22 @@ const [transcription, setTranscription] = useState<any>(null);
     if (id) fetchDetail();
     
   }, [id]);
+
+  // Inside ObservationDetail component:
+
+useEffect(() => {
+  if (!id) return;
+apiFetch(`/vim/${id}`)
+  .then((data) => {
+    setVimData(data as any[]); // Explicitly cast to array
+  })
+  .catch(() => setVimData([]));
+}, [id]);
+
+// In the return statement, render the table:
+
+
+
   // 👇 ADD transcription
   useEffect(() => {
     if (!obs?.id) return;
@@ -324,7 +344,7 @@ const [transcription, setTranscription] = useState<any>(null);
       englishSegments={transcription.english_segments}
     />
   )}
-
+{vimData.length > 0 && <VimTable data={vimData} />}
         {/* Map */}
         <div className="rounded-2xl border border-violet-500/15 bg-card/50 backdrop-blur-sm overflow-hidden">
           <div className="px-5 py-3.5 border-b border-border/40 bg-gradient-to-r from-violet-500/8 to-transparent flex items-center justify-between">

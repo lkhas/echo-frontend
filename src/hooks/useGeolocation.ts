@@ -9,7 +9,9 @@ interface GeolocationState {
   isAccurate: boolean;
 }
 
-const ACCURACY_THRESHOLD = 200; // meters
+const ACCURACY_THRESHOLD = Number(
+  process.env.ACCURACY_THRESHOLD || 200
+);
 
 export const useGeolocation = () => {
   const [state, setState] = useState<GeolocationState>({
