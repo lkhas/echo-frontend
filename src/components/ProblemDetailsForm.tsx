@@ -4,12 +4,21 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { GPSStatus } from './GPSStatus';
 import { MapPreview } from './MapPreview';
 import { VoiceRecorder } from './VoiceRecorder';
 import { ImageUploader } from './ImageUploader';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { useVoiceRecording } from '@/hooks/useVoiceRecording';
+
+export type ActivityType = 'transect_walk' | 'observation_notes';
 
 interface ProblemDetailsFormProps {
   onSubmit: (data: {
@@ -31,6 +40,7 @@ interface ProblemDetailsFormProps {
 export const ProblemDetailsForm = ({ onSubmit, onBack ,isLoading }: ProblemDetailsFormProps) => {
 
   const [title, setTitle] = useState('');
+  const [activityType, setActivityType] = useState<ActivityType>('observation_notes');
   const [villageName, setVillageName] = useState('');
   const [description, setDescription] = useState('');
   const [images, setImages] = useState<File[]>([]);
@@ -147,6 +157,26 @@ export const ProblemDetailsForm = ({ onSubmit, onBack ,isLoading }: ProblemDetai
             onChange={(e) => setTitle(e.target.value)}
             required
           />
+        </div>
+
+        {/* Activity Type */}
+        <div className="space-y-2">
+          <Label htmlFor="activityType" className="text-sm font-medium">
+            Activity Type <span className="text-destructive">*</span>
+          </Label>
+
+          <Select
+            value={activityType}
+            onValueChange={(value) => setActivityType(value as ActivityType)}
+          >
+            <SelectTrigger id="activityType">
+              <SelectValue placeholder="Select activity type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="transect_walk">Transect Walk</SelectItem>
+              <SelectItem value="observation_notes">Observation Notes</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Village Name */}
