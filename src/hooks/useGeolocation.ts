@@ -9,9 +9,17 @@ interface GeolocationState {
   isAccurate: boolean;
 }
 
-const ACCURACY_THRESHOLD = Number(
+// const ACCURACY_THRESHOLD = Number(
+//   import.meta.env.VITE_ACCURACY_THRESHOLD || 200
+// );
+
+
+const ACCURACY_THRESHOLD = 200;
+console.log(ACCURACY_THRESHOLD)
+const ACCURACY_THRESHOLD_test = Number(
   import.meta.env.VITE_ACCURACY_THRESHOLD || 200
 );
+console.log(ACCURACY_THRESHOLD_test)
 
 export const useGeolocation = () => {
   const [state, setState] = useState<GeolocationState>({
