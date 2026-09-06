@@ -17,30 +17,114 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { apiFetch } from '@/services/api';
 import { toast } from 'sonner';
-
+import { getLocalObservations } from '@/offline/getLocalObservations';
 
 const DashboardMap = lazy(() => import('@/components/dashboard/DashboardMap').then(m => ({ default: m.DashboardMap })));
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  
+
   const [observations, setObservations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [role, setRole] = useState<string | undefined>();
-  
+  const [isOffline, setIsOffline] = useState(!navigator.onLine); // NEW
+
+  // 1. Create the refresh function
+  const handleRefresh = async () => {
+    setLoading(true);
+    try {
+      if (!navigator.onLine) {
+        // ── Offline: read straight from IndexedDB ──
+        const localData = await getLocalObservations();
+        setObservations(localData);
+        return;
+      }
+
+      // ── Online: fetch from server as before ──
+      const token = localStorage.getItem('access_token');
+      if (!token) return;
+
+      const data = await apiFetch<any[]>('/observations', {
+        method: "GET",
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      const mappedData = data.map((obs: any) => {
+        const lat = parseFloat(obs.latitude);
+        const lng = parseFloat(obs.longitude);
+        let count = 0;
+        const rawUrls = obs.image_urls;
+
+        if (Array.isArray(rawUrls)) {
+          count = rawUrls.length;
+        } else if (typeof rawUrls === 'string') {
+          if (rawUrls.startsWith('{') && rawUrls.endsWith('}')) {
+            const cleaned = rawUrls.substring(1, rawUrls.length - 1);
+            count = cleaned.trim() ? cleaned.split(',').length : 0;
+          }
+        }
+
+        return {
+          ...obs,
+          latitude: isNaN(lat) ? null : lat,
+          longitude: isNaN(lng) ? null : lng,
+          observationType: obs.observation_type,
+          villageName: obs.village_name,
+          description: obs.narrative,
+          imageCount: count,
+          imageUrls: obs.image_urls || [],
+          hasAudio: !!obs.audio_url,
+          sdg: obs.sdg || null,
+          domain: obs.domain || null,
+          dimension: obs.dimension || null,
+          createdAt: obs.updated_at || obs.created_at,
+          syncStatus: 'confirmed',
+        };
+      });
+
+      setObservations(mappedData);
+    } catch (error) {
+      console.error("Failed to refresh, falling back to local data:", error);
+      // Network call failed even though navigator.onLine was true
+      // (flaky connection) — fall back to local data instead of an empty table.
+      try {
+        const localData = await getLocalObservations();
+        setObservations(localData);
+        toast.error("Couldn't reach the server — showing locally saved data");
+      } catch {
+        toast.error("Failed to refresh table");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // CHANGED — this is now the ONLY effect that loads data on mount.
+  // The separate `fetchAllData` useEffect that used to exist here has been
+  // removed entirely; handleRefresh() covers both the online and offline cases.
   useEffect(() => {
     const payload = getUserDataFromToken();
     if (payload) {
-      console.log("Logged in User Role:", payload.role); // 👈 Add this to debug
-      // Access the 'role' field we added to the JWT in the backend logic
+      console.log("Logged in User Role:", payload.role);
       setRole(payload.role);
-
     }
-                handleRefresh();
+    handleRefresh();
+  }, []);
 
+  // NEW — track online/offline transitions and auto-refresh when back online
+  useEffect(() => {
+    const goOffline = () => setIsOffline(true);
+    const goOnline = () => { setIsOffline(false); handleRefresh(); };
+
+    window.addEventListener('offline', goOffline);
+    window.addEventListener('online', goOnline);
+    return () => {
+      window.removeEventListener('offline', goOffline);
+      window.removeEventListener('online', goOnline);
+    };
   }, []);
 
   const validObservations = observations.filter(
@@ -57,116 +141,6 @@ const Dashboard = () => {
         validObservations.reduce((s, o) => s + o.longitude, 0) / validObservations.length,
       ] as [number, number]
     : [20.5937, 78.9629] as [number, number];
-    
-
-  useEffect(() => {
-    const fetchAllData = async () => {
-      try {
-        const token = localStorage.getItem('access_token');
-        if (!token) return;
-
-        const data = await apiFetch<any[]>('/observations', {
-          method: "GET",
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        const mappedData = data.map((obs: any) => {
-          const lat = parseFloat(obs.latitude);
-          const lng = parseFloat(obs.longitude);
-          let count = 0;
-          const rawUrls = obs.image_urls;
-
-          if (Array.isArray(rawUrls)) {
-            count = rawUrls.length;
-          } else if (typeof rawUrls === 'string') {
-            if (rawUrls.startsWith('{') && rawUrls.endsWith('}')) {
-              const cleaned = rawUrls.substring(1, rawUrls.length - 1);
-              count = cleaned.trim() ? cleaned.split(',').length : 0;
-            }
-          }
-
-          return {
-            ...obs,
-            latitude: isNaN(lat) ? null : lat,
-            longitude: isNaN(lng) ? null : lng,
-            observationType: obs.observation_type,
-            villageName: obs.village_name,
-            description: obs.narrative,
-            imageCount: count,
-            imageUrls: obs.image_urls || [],
-            hasAudio: !!obs.audio_url,
-            sdg: obs.sdg || null,
-            domain: obs.domain || null,
-            dimension: obs.dimension || null,
-            createdAt: obs.updated_at || obs.created_at,
-          };
-        });
-
-        setObservations(mappedData);
-      } catch (err) {
-        console.error("Dashboard Fetch Error:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAllData();
-  }, []);
-
-  // 1. Create the refresh function
-// Inside Dashboard.tsx
-const handleRefresh = async () => {
-  setLoading(true);
-  try {
-    // Cast the response to any[] or a specific interface
-       const token = localStorage.getItem('access_token');
-        if (!token) return;
-    const data = await apiFetch<any[]>('/observations', {
-          method: "GET",
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-    // If apiFetch returns the data directly:
-    
-        const mappedData = data.map((obs: any) => {
-          const lat = parseFloat(obs.latitude);
-          const lng = parseFloat(obs.longitude);
-          let count = 0;
-          const rawUrls = obs.image_urls;
-
-          if (Array.isArray(rawUrls)) {
-            count = rawUrls.length;
-          } else if (typeof rawUrls === 'string') {
-            if (rawUrls.startsWith('{') && rawUrls.endsWith('}')) {
-              const cleaned = rawUrls.substring(1, rawUrls.length - 1);
-              count = cleaned.trim() ? cleaned.split(',').length : 0;
-            }
-          }
-
-          return {
-            ...obs,
-            latitude: isNaN(lat) ? null : lat,
-            longitude: isNaN(lng) ? null : lng,
-            observationType: obs.observation_type,
-            villageName: obs.village_name,
-            description: obs.narrative,
-            imageCount: count,
-            imageUrls: obs.image_urls || [],
-            hasAudio: !!obs.audio_url,
-            sdg: obs.sdg || null,
-            domain: obs.domain || null,
-            dimension: obs.dimension || null,
-            createdAt: obs.updated_at || obs.created_at,
-          };
-        });
-
-        setObservations(mappedData);
-  } catch (error) {
-    console.error("Failed to refresh:", error);
-    toast.error("Failed to refresh table");
-  } finally {
-    setLoading(false);
-  }
-};
 
   const filtered = useMemo(() => {
     return observations.filter((obs) => {
@@ -197,6 +171,16 @@ const handleRefresh = async () => {
       <div className="fixed inset-0 bg-gradient-to-br from-violet-500/[0.03] via-background to-purple-900/[0.04] pointer-events-none" />
 
       <TopNav />
+
+      {/* NEW — Offline banner */}
+      {isOffline && (
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 pt-4">
+          <div className="flex items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-2.5 text-sm text-amber-700 dark:text-amber-400">
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+            You're offline — showing observations saved on this device. They'll sync automatically once you're back online.
+          </div>
+        </div>
+      )}
 
       {/* Content */}
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-5">
@@ -266,12 +250,11 @@ const handleRefresh = async () => {
         </div>
 
         {/* Table */}
-       {/* // 2. Pass it to the table component */}
-<ObservationTable 
-  observations={filtered} 
-  onDeleteSuccess={handleRefresh} 
-  userRole={role} // Pass the role to toggle the delete button
-/>
+        <ObservationTable 
+          observations={filtered} 
+          onDeleteSuccess={handleRefresh} 
+          userRole={role}
+        />
       </div>
     </div>
   );

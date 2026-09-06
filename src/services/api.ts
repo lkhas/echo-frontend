@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL;
+const API_BASE = "/api";
 
 export async function apiFetch<T>(
   url: string,
@@ -15,12 +15,26 @@ export async function apiFetch<T>(
     headers: mergedHeaders,      // then override headers safely
   });
 
-  if (!res.ok) {
-    const errorText = await res.text();
-    console.error("API ERROR STATUS:", res.status);
-    console.error("API ERROR BODY:", errorText);
-    throw new Error(errorText);
+if (!res.ok) {
+  const errorText = await res.text();
+
+  if (res.status === 401 && navigator.onLine) {
+    // JWT has expired or is invalid.
+    localStorage.removeItem("access_token");
+
+    // Keep this: it enables offline field work later.
+    // localStorage.removeItem("offline_access_granted"); // Do NOT do this.
+
+    sessionStorage.setItem(
+      "login_message",
+      "Your session expired. Please log in to sync your saved offline data."
+    );
+
+    window.location.assign("/");
   }
+
+  throw new Error(errorText);
+}
 
   return res.json();
 }

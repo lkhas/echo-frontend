@@ -27,6 +27,7 @@ import { MediaPreviewDialog } from './MediaPreviewDialog';
 import { exportObservationToWord } from '@/lib/exportWordDocument';
 import { toast } from 'sonner';
 import { apiFetch } from '@/services/api';
+
 interface Observation {
   id: string;
   villageName: string;
@@ -40,6 +41,7 @@ interface Observation {
   longitude: number;
   createdAt: string;
   status: string;
+  syncStatus?: 'pending' | 'confirmed'; // NEW — undefined is treated as confirmed
 }
 
 // 1. Add this to your interface
@@ -55,11 +57,31 @@ const typeColors: Record<string, string> = {
   health: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
   infrastructure: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
   education: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20',
+   // New types
+  security: 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20',
+  economy: 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20',
+  other: 'bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/20',
 };
 
 type SortKey = 'createdAt' | 'observationType' | 'villageName';
 type SortDir = 'asc' | 'desc';
 const ITEMS_PER_PAGE = 5;
+
+// NEW — builds a condensed page list like: 1 … 4 5 [6] 7 8 … 20
+function getPageNumbers(current: number, total: number): (number | 'ellipsis')[] {
+  const delta = 1;
+  const range: (number | 'ellipsis')[] = [];
+  const rangeStart = Math.max(2, current - delta);
+  const rangeEnd = Math.min(total - 1, current + delta);
+
+  range.push(1);
+  if (rangeStart > 2) range.push('ellipsis');
+  for (let i = rangeStart; i <= rangeEnd; i++) range.push(i);
+  if (rangeEnd < total - 1) range.push('ellipsis');
+  if (total > 1) range.push(total);
+
+  return range;
+}
 
 export const ObservationTable = ({ observations, onDeleteSuccess, userRole}: ObservationTableProps) => {  const navigate = useNavigate();
 
@@ -202,13 +224,24 @@ export const ObservationTable = ({ observations, onDeleteSuccess, userRole}: Obs
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
                         <span className="text-sm font-medium">{obs.villageName}</span>
+                        {/* NEW — Pending sync badge, only shows for locally-saved unsynced rows */}
+                        {obs.syncStatus === 'pending' && (
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] px-1.5 py-0 h-5 border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                          >
+                            Pending sync
+                          </Badge>
+                        )}
                       </div>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell max-w-[300px]">
-                      <p className="text-sm text-muted-foreground truncate">{obs.description}</p>
+                    <TableCell className="hidden md:table-cell max-w-[300px] align-top">
+                      <p className="text-sm text-muted-foreground whitespace-normal break-words line-clamp-3">
+                        {obs.description}
+                      </p>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
@@ -271,26 +304,41 @@ export const ObservationTable = ({ observations, onDeleteSuccess, userRole}: Obs
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="p-4 border-t border-border/50">
-            <Pagination>
-              <PaginationContent>
+          <div className="p-4 border-t border-border/50 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p className="text-xs text-muted-foreground order-2 sm:order-1">
+              Page {safePage} of {totalPages}
+            </p>
+
+            <Pagination className="order-1 sm:order-2 mx-0 w-auto">
+              <PaginationContent className="flex-wrap justify-center gap-1">
                 <PaginationItem>
                   <PaginationPrevious
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                     className={safePage <= 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
                   />
                 </PaginationItem>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                  <PaginationItem key={page}>
-                    <PaginationLink
-                      isActive={page === safePage}
-                      onClick={() => setCurrentPage(page)}
-                      className="cursor-pointer"
-                    >
-                      {page}
-                    </PaginationLink>
-                  </PaginationItem>
-                ))}
+
+                {/* Page numbers: hidden on mobile, condensed on desktop */}
+                <div className="hidden sm:flex items-center gap-1">
+                  {getPageNumbers(safePage, totalPages).map((page, idx) =>
+                    page === 'ellipsis' ? (
+                      <PaginationItem key={`ellipsis-${idx}`}>
+                        <span className="px-2 text-muted-foreground text-sm">…</span>
+                      </PaginationItem>
+                    ) : (
+                      <PaginationItem key={page}>
+                        <PaginationLink
+                          isActive={page === safePage}
+                          onClick={() => setCurrentPage(page)}
+                          className="cursor-pointer"
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    )
+                  )}
+                </div>
+
                 <PaginationItem>
                   <PaginationNext
                     onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}

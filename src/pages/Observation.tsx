@@ -1,17 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ProblemDetailsForm } from '@/components/ProblemDetailsForm';
+import { ProblemDetailsForm, ActivityType, AssetType } from '@/components/ProblemDetailsForm';
 import { SuccessScreen } from '@/components/SuccessScreen';
 import { TopNav } from '@/components/TopNav';
 import { Zap } from 'lucide-react';
 
 import { v4 as uuid } from 'uuid';
 import { saveObservationOffline } from '@/offline/saveObservation';
-import { syncOperations } from '@/offline/sync';
-import { syncNarTrans } from '@/offline/syncNarTrans';
-import { syncMediaUploads } from '@/offline/syncMedia';
-import { syncAI } from '@/offline/syncAI';
-import { processAIEvents } from '@/offline/syncAIEvents';
+import { runFullSync } from "@/offline/syncmanage";
+import { useSyncStatus } from '@/offline/syncState';
 import { Button } from '@/components/ui/button';
 
 
@@ -19,6 +16,8 @@ interface ProblemDetails {
   title: string;
   villageName: string;
   description: string;
+  activityType: ActivityType;
+  assetType: AssetType | null;
   audioBlob: Blob | null;
   images: File[];
   location: {
@@ -32,6 +31,7 @@ const Observation = () => {
   const navigate = useNavigate();
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false); // 1. Add loading state
+  const syncStatus = useSyncStatus(); // "idle" | "offline" | "syncing" | "error" | "up_to_date"
 
   const handleProblemDetailsSubmit = async (data: ProblemDetails) => {
     setIsLoading(true); // 2. Set loading to true when user clicks submit
@@ -42,6 +42,8 @@ const Observation = () => {
   latitude: data.location.latitude,
   longitude: data.location.longitude,
   observation_type: null,   // AI will classify later
+  activity_type: data.activityType,
+  asset_type: data.assetType, // null unless Activity Type is "Transect Walk"
   village_name: data.villageName,
   image_urls: [],
   audio_url: null,
@@ -51,31 +53,20 @@ const Observation = () => {
    // 1. Save data locally (Crucial first step)
     await saveObservationOffline(observation, data.images, data.audioBlob);
 
-    // 2. Trigger sync in the background without blocking the UI
-    // We use a self-invoking async function or simply don't 'await' the syncs 
-    // to ensure the user gets immediate feedback.
-   if (navigator.onLine) {
-  const token = localStorage.getItem('access_token');
-  if (token) {
-    (async () => {
-      try {
-        // 1. First, make sure the observation is created in the DB
-        await syncOperations(token);
-        
-        // 2. Then, upload any associated images or audio
-        await syncMediaUploads(token);
-        
-        // 3. Finally, trigger the AI processing (Transcribe -> Translate -> VIM)
-        // Now it won't 404 because Step 1 is guaranteed to be finished!
-        await processAIEvents(token);
-        
-        console.log("Background sync finished successfully");
-      } catch (syncError) {
-        console.error("Background sync failed:", syncError);
+    // 2. Trigger sync in the background without blocking the UI.
+    // runFullSync handles operations -> media -> AI events in order, and is
+    // safe to call even if App.tsx's mount/online effect is already running
+    // one — they share the same in-flight run instead of racing.
+    if (navigator.onLine) {
+      const token = localStorage.getItem('access_token');
+      if (token) {
+        runFullSync(token).catch((syncError) => {
+          console.error("Background sync failed:", syncError);
+        });
       }
-    })();
-  }
-}
+    }
+
+
 
     // 3. Immediately update UI state so user sees SuccessScreen
     console.log("Setting isSubmitted to true now");
@@ -114,11 +105,31 @@ const Observation = () => {
             {isSubmitted ? (
               <SuccessScreen onReset={handleReset} />
             ) : (
-              <ProblemDetailsForm
-                onSubmit={handleProblemDetailsSubmit}
-                onBack={() => {}}
-                isLoading={isLoading} // Pass the state here
-              />
+              <>
+                {syncStatus === "syncing" && (
+                  <div className="mb-4 flex items-center gap-2 text-xs text-violet-500">
+                    <span className="h-1.5 w-1.5 rounded-full bg-violet-500 animate-pulse" />
+                    Syncing your last observation…
+                  </div>
+                )}
+                {syncStatus === "error" && (
+                  <div className="mb-4 flex items-center gap-2 text-xs text-destructive">
+                    <span className="h-1.5 w-1.5 rounded-full bg-destructive" />
+                    Last sync failed — will retry automatically
+                  </div>
+                )}
+                {syncStatus === "offline" && (
+                  <div className="mb-4 flex items-center gap-2 text-xs text-muted-foreground">
+                    <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
+                    Offline — saved locally, will sync when back online
+                  </div>
+                )}
+                <ProblemDetailsForm
+                  onSubmit={handleProblemDetailsSubmit}
+                  onBack={() => {}}
+                  isLoading={isLoading} // Pass the state here
+                />
+              </>
             )}
           </div>
         </div>

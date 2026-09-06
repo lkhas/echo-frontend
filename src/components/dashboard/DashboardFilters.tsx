@@ -75,6 +75,9 @@ export const DashboardFilters = ({
                 <SelectItem value="health">❤️ Health</SelectItem>
                 <SelectItem value="infrastructure">🏗️ Infrastructure</SelectItem>
                 <SelectItem value="education">📚 Education</SelectItem>
+                <SelectItem value="security">🔒 Security</SelectItem>
+                <SelectItem value="economy">💰 Economy</SelectItem>
+                <SelectItem value="other">📌 Other</SelectItem>
               </SelectContent>
             </Select>
           </div>

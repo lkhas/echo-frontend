@@ -3,6 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { ChevronDown, ChevronRight, TrendingUp, TrendingDown, Minus, Info } from "lucide-react";
 import { VimNetworkDiagram } from "@/components/VimNetworkDiagram";
+import { VimD3Network } from "@/components/VimD3Network";
 
 // ─── SDG color palette (UN official) ───────────────────────────────────────
 const sdgColorMap: Record<string, { bg: string; text: string; dot: string }> = {
@@ -426,6 +427,9 @@ export const VimTable = ({ data }: { data: any[] }) => {
 
       {/* ── Network Diagram ── */}
       <VimNetworkDiagram data={data} />
+
+      {/* ── D3 Force Network ── */}
+      <VimD3Network data={data} />
     </div>
   );
 };

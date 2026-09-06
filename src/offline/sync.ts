@@ -3,46 +3,67 @@ import { apiFetch } from "@/services/api";
 import { getBackoffDelay } from "./backoff";
 import { purgeConfirmedOperations } from "./purge";
 import { syncState } from "./syncState";
+import type { Operation } from "./types";
 
-export async function syncOperations(token: string) {
-  console.log("🔁 syncOperations called");
+const DEBUG = process.env.NODE_ENV !== "production";
+function log(...args: unknown[]) {
+  if (DEBUG) console.log(...args);
+}
+
+export interface SyncResult {
+  attempted: number;
+  confirmed: number;
+  failed: number;
+}
+
+let inFlight: Promise<SyncResult> | null = null;
+
+/**
+ * Pushes all pending local `operations` to the backend.
+ *
+ * Safe to call from multiple places at once (e.g. an app-mount effect and a
+ * post-submit handler) — overlapping calls join the same in-flight run
+ * instead of racing each other over IndexedDB.
+ */
+export function syncOperations(token: string): Promise<SyncResult> {
+  if (inFlight) {
+    log("⏳ syncOperations already running, joining in-flight run");
+    return inFlight;
+  }
+  inFlight = run(token).finally(() => {
+    inFlight = null;
+  });
+  return inFlight;
+}
+
+async function run(token: string): Promise<SyncResult> {
+  const result: SyncResult = { attempted: 0, confirmed: 0, failed: 0 };
 
   if (!navigator.onLine) {
-    console.log("❌ Offline, skipping sync");
+    log("❌ Offline, skipping sync");
     syncState.setStatus("offline");
-    return;
+    return result;
   }
 
   syncState.setStatus("syncing");
 
   const db = await dbPromise;
-  const ops = await db.getAll("operations");
-
-  console.log("📦 Operations found:", ops.length);
-
-
+  const ops: Operation[] = await db.getAll("operations");
   const now = Date.now();
-  
-  // ✅ THESE MUST EXIST (THIS IS YOUR ERROR)
-  let hadError = false;
-  let didSync = false;
+
+  log(`📦 Operations found: ${ops.length}`);
 
   for (const op of ops) {
     if (op.status === "confirmed") continue;
 
-    const retries = op.retries || 0;
+    const retries = op.retries ?? 0;
     const delay = getBackoffDelay(retries);
+    if (op.lastAttempt && now - op.lastAttempt < delay) continue;
 
-    // ⏳ BACKOFF CHECK
-    if (op.lastAttempt && now - op.lastAttempt < delay) {
-      continue;
-    }
-      console.log("📦 Payload being sent:", op.payload);
-      console.log("TYPE OF PAYLOAD:", typeof op.payload);
-
+    result.attempted++;
 
     try {
-      console.log(`📤 Sending ${op.op_id} (retry ${retries})`);
+      log(`📤 Sending ${op.op_id} (retry ${retries})`);
 
       await apiFetch("/observations", {
         method: "POST",
@@ -53,37 +74,35 @@ export async function syncOperations(token: string) {
         body: JSON.stringify(op.payload),
       });
 
-      // ✅ success
       op.status = "confirmed";
       await db.put("operations", op);
+      result.confirmed++;
 
-      console.log(`✅ Operation ${op.op_id} confirmed`);
+      log(`✅ Operation ${op.op_id} confirmed`);
     } catch (err) {
-      // ❌ failure → schedule retry
       op.retries = retries + 1;
       op.lastAttempt = now;
-
       await db.put("operations", op);
-      didSync = true;
+      result.failed++;
 
-      console.log(
+      log(
         `⚠️ Failed ${op.op_id}, retry #${op.retries} in ${getBackoffDelay(op.retries)}ms`,
         err
       );
     }
   }
-  
 
-  // 🧹 cleanup old confirmed ops
   await purgeConfirmedOperations();
 
-
-  if (hadError) {
+  // Correctly reflect outcome — previously `hadError` was declared but
+  // never set, so the UI could never show a real error state.
+  if (result.attempted > 0 && result.confirmed === 0 && result.failed > 0) {
     syncState.setStatus("error");
-  } else if (didSync) {
+  } else if (result.confirmed > 0) {
     syncState.setStatus("up_to_date");
   } else {
     syncState.setStatus("idle");
   }
 
+  return result;
 }

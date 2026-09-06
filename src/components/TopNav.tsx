@@ -1,17 +1,28 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Plus, ImageIcon, LogOut, User, Zap, AudioLinesIcon } from 'lucide-react';
+import { LayoutDashboard, Plus, ImageIcon, LogOut, User, Zap, Voicemail, AudioLinesIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { useVoiceRecording } from '@/hooks/useVoiceRecording';
 
 const navItems = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'New Report', href: '/observation', icon: Plus, isPrimary: true },
-  // { label: 'Translation', href: '/transcribe', icon: AudioLinesIcon },
+  { label: 'Gallery', href: '/gallery', icon: AudioLinesIcon },
 ];
 
 export const TopNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const handleLogout = () => {
+  localStorage.removeItem("access_token");
+    // Keep this key so offline mode remains available.
+
+  // localStorage.removeItem("offline_access_granted");
+  sessionStorage.removeItem("login_message");
+
+  // Does NOT delete IndexedDB offline reports.
+  navigate("/", { replace: true });
+};
 
   return (
     <nav className="sticky top-0 z-50 w-full">
@@ -73,16 +84,16 @@ export const TopNav = () => {
           </div>
 
           <ThemeToggle />
-
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/login')}
-            className="rounded-xl gap-1.5 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/8 transition-all"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Logout</span>
-          </Button>
+<Button
+  variant="ghost"
+  size="sm"
+  onClick={handleLogout}
+  aria-label="Log out"
+  className="rounded-xl gap-1.5 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/8 transition-all"
+>
+  <LogOut className="w-4 h-4" />
+  <span>Logout</span>
+</Button>
         </div>
       </div>
 
@@ -110,6 +121,14 @@ export const TopNav = () => {
             </button>
           );
         })}
+        <button
+  type="button"
+  onClick={handleLogout}
+  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-medium text-destructive hover:bg-destructive/10"
+>
+  <LogOut className="w-3.5 h-3.5" />
+  Logout
+</button>
       </div>
     </nav>
   );

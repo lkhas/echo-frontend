@@ -45,7 +45,7 @@ export async function syncMediaUploads(token: string) {
 
       // If audio, trigger the FIRST event in the relay
       if (item.field === "audio_url") {
-                console.log("❌ AUdio triggered TRANSCRIBE_AUDIO");
+                console.log("AUdio triggered TRANSCRIBE_AUDIO");
 
         await db.put("ai_events", {
           event_id: uuid(),

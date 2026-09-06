@@ -7,6 +7,7 @@ const listeners = new Set<() => void>();
 
 // Central function to update state and notify UI
 function updateStatus(next: SyncStatus) {
+  if (next === currentStatus) return;
   currentStatus = next;
   console.log(`🔄 Sync status changed to: ${currentStatus}`);
   listeners.forEach((l) => l());

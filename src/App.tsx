@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route,Navigate  } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { SyncStatus } from "./components/SyncStatus";
@@ -11,130 +11,112 @@ import Login from "./pages/Login";
 import Observation from "./pages/Observation";
 import { useEffect } from "react";
 
-import { syncOperations } from "./offline/sync";
-import { syncMediaUploads } from "./offline/syncMedia";
-import { syncNarTrans } from "./offline/syncNarTrans";
-import { syncAI } from "./offline/syncAI";
-import { processAIEvents } from "./offline/syncAIEvents";
-import { purgeAllConfirmed } from "./offline/purge";
+import { runFullSync } from "@/offline/syncmanage";
 
 import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/Dashboard";
 import ObservationDetail from "./pages/ObservationDetail";
 
-
-import Audiotranscribepage from './pages/Audiotranscribepage';
+// import Audiotranscribepage from './pages/Audiotranscribepage1';
 import Transcriberesultpage from './pages/Transcriberesultpage_v1';
-
+import { syncState } from "./offline/syncState";
 
 const queryClient = new QueryClient();
-
-
-
 
 // ─── Protected Route Guard ───────────────────────────────────────────────────
 // Redirects to "/" (Login) if no access_token is found in localStorage.
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const token = localStorage.getItem("access_token");
-  if (!token) {
-    return <Navigate to="/" replace />;
+  const offlineAccess =
+    localStorage.getItem("offline_access_granted") === "true";
+
+  // Normal authenticated session
+  if (token) {
+    return <>{children}</>;
   }
-  return <>{children}</>;
+
+  // Previously authenticated device may enter field data offline.
+  if (!navigator.onLine && offlineAccess) {
+    return <>{children}</>;
+  }
+
+  return <Navigate to="/" replace />;
 };
-
-// const deleteDB = (dbName) => {
-//   const req = indexedDB.deleteDatabase(dbName);
-  
-//   req.onsuccess = () => {
-//     console.log(`Deleted database: ${dbName}`);
-//   };
-  
-//   req.onerror = () => {
-//     console.error(`Couldn't delete database: ${dbName}`);
-//   };
-  
-//   req.onblocked = () => {
-//     console.warn(`Deletion blocked: ${dbName}. Close all tabs.`);
-//   };
-// };
-
-// // Usage
-// deleteDB('echo-db');
-
 // ─────────────────────────────────────────────────────────────────────────────
-const App = () => (
+
+const App = () => {
   useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    if (!token) return;
+    const runSync = () => {
+         if (!navigator.onLine) {
+      syncState.setStatus("offline");
+      return;
+    }
 
-     // ... inside the App component
-const runSync = async () => {
-  const token = localStorage.getItem("access_token");
-  if (!token) return;
+      const token = localStorage.getItem("access_token");
+      if (!token) return;
 
-  try {
-    // 1. Sync core operations first
-    await syncOperations(token);
-    
-    // 2. Upload media (Triggers TRANSCRIBE_AUDIO in ai_events if audio exists)
-    await syncMediaUploads(token);
+      // runFullSync is locked internally, so this is safe to call here
+      // even if Observation.tsx just kicked off the same sync after a
+      // submit — they'll share the same in-flight run instead of racing.
+      runFullSync(token).catch((err) => {
+        console.error("Critical sync failure", err);
+      });
+    };
 
-    // 3. Process the AI sequence (Transcribe -> Narrative -> VIM)
-    // This handles reloads and skips finished steps automatically
-    await processAIEvents(token);
+    runSync();
+    window.addEventListener("online", runSync);
 
-    // 🔥 Call the cleanup here after all syncs are finished
-  await purgeAllConfirmed();
-  } catch (err) {
-    console.error("Critical sync failure", err);
-  }
+    return () => {
+      window.removeEventListener("online", runSync);
+    };
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <ThemeToggle />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Login />} />
+              <Route path="/login" element={<Index />} />
+
+              {/* ── Protected routes (login required) ── */}
+              <Route
+                path="/observation"
+                element={
+                  <ProtectedRoute>
+                    <Observation />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/observation/:id" element={<ObservationDetail />} />
+
+              {/* Transcription pages */}
+              {/* <Route path="/transcribe" element={<Audiotranscribepage />} /> */}
+              <Route path="/transcribe/result" element={<Transcriberesultpage />} />
+
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+
+            {/* 🔔 Global sync status (renders on all pages) */}
+            <SyncStatus />
+          </BrowserRouter>
+        </TooltipProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  );
 };
-
-  runSync();
-
-  window.addEventListener("online", runSync);
-
-  return () => {
-    window.removeEventListener("online", runSync);
-  };
-}, []),
-
-
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <ThemeToggle />
-        <BrowserRouter>
-          <Routes>
-          <Route path="/" element={<Login />} />
-          <Route path="/login" element={<Index />} />
-
-                      {/* ── Protected routes (login required) ── */}
-
-          <Route path="/observation" element={
-                <ProtectedRoute>
-                  <Observation />
-                </ProtectedRoute>
-              } />
-          <Route path="/dashboard" element={  <ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/observation/:id" element={<ObservationDetail />} />
-        // Inside your routes:
-<Route path="/transcribe" element={<Audiotranscribepage />} />
-<Route path="/transcribe/result" element={<Transcriberesultpage />} />
-        
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-         
-        </Routes>
-        
-      {/* 🔔 Global sync status (renders on all pages) */}
-      <SyncStatus />
-      </BrowserRouter>
-      </TooltipProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
-);
 
 export default App;

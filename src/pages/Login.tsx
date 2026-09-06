@@ -1,4 +1,4 @@
-import { useState } from 'react'; // Added useState
+import { useEffect,useState } from 'react'; // Added useState
 import { LoginForm } from '@/components/LoginForm';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -9,8 +9,43 @@ const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false); // New Loading State
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+useEffect(() => {
+  const updateNetworkStatus = () => setIsOnline(navigator.onLine);
+
+  window.addEventListener("online", updateNetworkStatus);
+  window.addEventListener("offline", updateNetworkStatus);
+
+  return () => {
+    window.removeEventListener("online", updateNetworkStatus);
+    window.removeEventListener("offline", updateNetworkStatus);
+  };
+}, []);
+
+const canUnlockOffline =
+  !isOnline &&
+  localStorage.getItem("offline_access_granted") === "true";
 
   const handleLoginSubmit = async (data: { phone: string; password: string }) => {
+
+  if (!navigator.onLine) {
+    const hasOfflineAccess =
+      localStorage.getItem("offline_access_granted") === "true" ||
+      Boolean(localStorage.getItem("access_token"));
+
+    if (hasOfflineAccess) {
+      navigate("/observation");
+      return;
+    }
+
+    toast({
+      title: "Internet connection required",
+      description: "Connect to the internet and log in once before using offline mode.",
+      variant: "destructive",
+    });
+    return;
+  }
     setIsLoading(true); // Start loading
     try {
       const response = await apiFetch<{ access_token: string }>(
@@ -25,13 +60,14 @@ const Login = () => {
       );
 
       localStorage.setItem('access_token', response.access_token);
+      localStorage.setItem('offline_access_granted', 'true');
 
       toast({
         title: 'Login successful',
         description: 'Welcome back to your account.',
       });
 
-      navigate('/observation');
+     window.location.assign('/observation');
     } catch (error: any) {
       toast({
         title: 'Login failed',
@@ -67,6 +103,15 @@ const Login = () => {
 
         <div className="glass-card rounded-2xl p-6 shadow-xl shadow-primary/5 border border-border/60">
           <LoginForm onSubmit={handleLoginSubmit} isLoading={isLoading} />
+          {canUnlockOffline && (
+  <button
+    type="button"
+    onClick={() => window.location.assign("/observation")}
+    className="mt-4 w-full rounded-md border px-4 py-2 text-sm"
+  >
+    Open offline mode
+  </button>
+)}
         </div>
 
         {/* ... rest of your badges and footer */}
