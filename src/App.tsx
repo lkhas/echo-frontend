@@ -20,6 +20,10 @@ import ObservationDetail from "./pages/ObservationDetail";
 // import Audiotranscribepage from './pages/Audiotranscribepage1';
 import Transcriberesultpage from './pages/Transcriberesultpage_v1';
 import { syncState } from "./offline/syncState";
+import { resetStuckProcessingEvents } from "@/offline/purge"; // NEW
+import TransectWalkDashboard from "@/pages/TransectWalkDashboard"; // NEW import
+
+
 
 const queryClient = new QueryClient();
 
@@ -53,6 +57,8 @@ const App = () => {
     }
 
       const token = localStorage.getItem("access_token");
+        resetStuckProcessingEvents(token ?? undefined); // NEW — pass token for reconciliation
+
       if (!token) return;
 
       // runFullSync is locked internally, so this is safe to call here
@@ -105,6 +111,15 @@ const App = () => {
               {/* Transcription pages */}
               {/* <Route path="/transcribe" element={<Audiotranscribepage />} /> */}
               <Route path="/transcribe/result" element={<Transcriberesultpage />} />
+
+       <Route
+  path="/transect-walk"
+  element={
+    <ProtectedRoute>
+      <TransectWalkDashboard />
+    </ProtectedRoute>
+  }
+/>
 
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

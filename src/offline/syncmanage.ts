@@ -1,7 +1,7 @@
 import { syncOperations } from "./sync";
 import { syncMediaUploads } from "./syncMedia";
 import { processAIEvents } from "./syncAIEvents";
-import { purgeAllConfirmed } from "./purge";
+import { purgeAllConfirmed, resetStuckProcessingEvents } from "@/offline/purge";
 
 // Module-level singleton lock. Any caller during an in-flight run just
 // awaits the SAME promise instead of starting a second parallel pipeline.
@@ -15,6 +15,9 @@ export function runFullSync(token: string): Promise<void> {
 
   inFlight = (async () => {
     try {
+          
+      await resetStuckProcessingEvents(token); // token already available in this function's scope
+
       await syncOperations(token);
       await syncMediaUploads(token);
       await processAIEvents(token);

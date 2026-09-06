@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Plus, ImageIcon, LogOut, User, Zap, Voicemail, AudioLinesIcon } from 'lucide-react';
+import { LayoutDashboard, Plus, ImageIcon, LogOut, User, Zap, Voicemail, AudioLinesIcon, PersonStanding } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useVoiceRecording } from '@/hooks/useVoiceRecording';
@@ -7,7 +7,7 @@ import { useVoiceRecording } from '@/hooks/useVoiceRecording';
 const navItems = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'New Report', href: '/observation', icon: Plus, isPrimary: true },
-  { label: 'Gallery', href: '/gallery', icon: AudioLinesIcon },
+  { label: 'Transect-Walk', href: '/transect-walk', icon: PersonStanding },
 ];
 
 export const TopNav = () => {
