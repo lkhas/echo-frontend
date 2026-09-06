@@ -10,7 +10,7 @@ interface GeolocationState {
 }
 
 const ACCURACY_THRESHOLD = Number(
-  process.env.ACCURACY_THRESHOLD || 50
+  process.env.VITE_ACCURACY_THRESHOLD || 200
 );
 
 export const useGeolocation = () => {
